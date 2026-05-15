@@ -1,0 +1,105 @@
+* {
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 13px;
+    border: none;
+    border-radius: 0;
+    min-height: 0;
+}
+
+/* Breeze Dark palette:
+   bg       #24272c   bg-alt   #151c23
+   fg       #eff0f1   fg-dim   #7f8c8d
+   accent   #3daee9   accent2  #346c92
+   positive #7ea64b   neutral  #c7823d
+   negative #da4453                     */
+
+window#waybar {
+    background-color: rgba(36, 39, 44, 0.92);
+    color: #eff0f1;
+}
+
+.modules-left,
+.modules-center,
+.modules-right {
+    background-color: rgba(21, 28, 35, 0.88);
+    border-radius: 8px;
+    margin: 4px 6px;
+    padding: 0 8px;
+}
+
+#workspaces button {
+    padding: 0 6px;
+    color: #7f8c8d;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+#workspaces button.active {
+    color: #3daee9;
+    background-color: rgba(61, 174, 233, 0.15);
+}
+
+#workspaces button:hover {
+    color: #eff0f1;
+    background-color: rgba(239, 240, 241, 0.08);
+}
+
+#window {
+    color: #bdc3c7;
+    padding: 0 8px;
+}
+
+#clock {
+    color: #3daee9;
+    font-weight: bold;
+    padding: 0 10px;
+}
+
+#cpu {
+    color: #7ea64b;
+}
+
+#memory {
+    color: #c7823d;
+}
+
+#battery {
+    color: #7ea64b;
+}
+
+#battery.warning {
+    color: #c7823d;
+}
+
+#battery.critical {
+    color: #da4453;
+}
+
+#network {
+    color: #3daee9;
+}
+
+#pulseaudio {
+    color: #85c1e9;
+}
+
+#pulseaudio.muted {
+    color: #7f8c8d;
+}
+
+#tray {
+    padding: 0 4px;
+}
+
+#custom-power {
+    color: #da4453;
+    padding: 0 10px;
+    font-size: 16px;
+}
+
+tooltip {
+    background-color: rgba(36, 39, 44, 0.97);
+    border: 1px solid rgba(61, 174, 233, 0.35);
+    border-radius: 6px;
+    color: #eff0f1;
+}

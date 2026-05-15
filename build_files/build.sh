@@ -2,23 +2,90 @@
 
 set -ouex pipefail
 
-### Install packages
+### ── Hyprland compositor and core ecosystem ──────────────────────────────────
+dnf5 install -y \
+    hyprland \
+    hyprpaper \
+    hyprlock \
+    hypridle \
+    xdg-desktop-portal-hyprland \
+    xdg-desktop-portal-gtk
 
-# Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
-# List of rpmfusion packages can be found here:
-# https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
+### ── Status bar ──────────────────────────────────────────────────────────────
+dnf5 install -y waybar
 
-# this installs a package from fedora repos
-dnf5 install -y tmux 
+### ── App launcher ────────────────────────────────────────────────────────────
+dnf5 install -y wofi
 
-# Use a COPR Example:
-#
-# dnf5 -y copr enable ublue-os/staging
-# dnf5 -y install package
-# Disable COPRs so they don't end up enabled on the final image:
-# dnf5 -y copr disable ublue-os/staging
+### ── Notifications ───────────────────────────────────────────────────────────
+dnf5 install -y dunst libnotify
 
-#### Example for enabling a System Unit File
+### ── Terminal emulator ───────────────────────────────────────────────────────
+dnf5 install -y kitty
 
+### ── Screenshot tools ────────────────────────────────────────────────────────
+dnf5 install -y grim slurp swappy
+
+### ── Clipboard ───────────────────────────────────────────────────────────────
+dnf5 install -y wl-clipboard cliphist
+
+### ── Display / brightness / media controls ───────────────────────────────────
+dnf5 install -y \
+    brightnessctl \
+    playerctl \
+    pavucontrol \
+    pamixer
+
+### ── Polkit authentication agent ─────────────────────────────────────────────
+dnf5 install -y polkit-gnome
+
+### ── Qt and GTK Wayland support ──────────────────────────────────────────────
+dnf5 install -y \
+    qt5-qtwayland \
+    qt6-qtwayland \
+    nwg-look
+
+### ── Fonts ────────────────────────────────────────────────────────────────────
+dnf5 install -y \
+    nerd-fonts \
+    fontawesome-fonts \
+    fontawesome-fonts-web
+
+### ── Network / Bluetooth applets ─────────────────────────────────────────────
+dnf5 install -y \
+    network-manager-applet \
+    blueman
+
+### ── File manager ────────────────────────────────────────────────────────────
+dnf5 install -y \
+    thunar \
+    thunar-volman \
+    thunar-archive-plugin
+
+### ── Theming ──────────────────────────────────────────────────────────────────
+dnf5 install -y \
+    adw-gtk3-theme \
+    papirus-icon-theme
+
+### ── XDG user dirs ───────────────────────────────────────────────────────────
+dnf5 install -y xdg-user-dirs xdg-user-dirs-gtk
+
+### ── Communication ────────────────────────────────────────────────────────────
+dnf5 install -y discord
+
+### ── Misc utilities used by common Hyprland configs ──────────────────────────
+dnf5 install -y \
+    jq \
+    socat \
+    imagemagick
+
+### ── Install default configs into /etc/skel ──────────────────────────────────
+# New users automatically get these configs copied to their home directory.
+install -d /etc/skel/.config
+cp -r /ctx/config/* /etc/skel/.config/
+install -d /etc/skel/Pictures/Screenshots
+
+### ── Enable system units ─────────────────────────────────────────────────────
+# Bazzite-dx ships SDDM — Hyprland will appear as a selectable session at login.
+systemctl enable bluetooth.service
 systemctl enable podman.socket
