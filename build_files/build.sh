@@ -2,6 +2,10 @@
 
 set -ouex pipefail
 
+### ── Enable Hyprland COPR (not yet in official Fedora repos) ────────────────
+dnf5 -y copr enable solopasha/hyprland
+dnf5 -y copr enable erikreider/SwayNotificationCenter
+
 ### ── Hyprland compositor and core ecosystem ──────────────────────────────────
 dnf5 install -y \
     hyprland \
@@ -16,6 +20,10 @@ dnf5 install -y waybar
 
 ### ── App launcher ────────────────────────────────────────────────────────────
 dnf5 install -y wofi
+
+### ── Disable COPRs so they are not active on the final image ─────────────────
+dnf5 -y copr disable solopasha/hyprland
+dnf5 -y copr disable erikreider/SwayNotificationCenter
 
 ### ── Notifications ───────────────────────────────────────────────────────────
 dnf5 install -y dunst libnotify
