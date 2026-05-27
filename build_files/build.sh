@@ -82,7 +82,10 @@ dnf5 install -y "https://discord.com/api/download?platform=linux&format=rpm"
 
 ### ── ProtonVPN (official Fedora repo) ────────────────────────────────────────
 dnf5 install -y "https://repo.protonvpn.com/fedora-$(rpm -E %fedora)-stable/protonvpn-stable-release/protonvpn-stable-release-1.0.3-1.noarch.rpm"
-dnf5 install -y proton-vpn-gnome-desktop
+# --setopt=tsflags=noscripts skips %post/%posttrans scriptlets that try to
+# run 'systemctl start' — which fails because there is no systemd in a container.
+# The service is enabled manually below so it starts on first boot.
+dnf5 install -y --setopt=tsflags=noscripts proton-vpn-gnome-desktop
 
 ### ── RustDesk (latest RPM from GitHub releases) ─────────────────────────────
 RUSTDESK_VER=$(curl -fsSL https://api.github.com/repos/rustdesk/rustdesk/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/')
@@ -122,3 +125,4 @@ install -d /etc/skel/Pictures/Wallpapers
 ### ── Enable system units ─────────────────────────────────────────────────────
 systemctl enable bluetooth.service
 systemctl enable podman.socket
+systemctl enable me.proton.vpn.service
