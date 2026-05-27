@@ -1,0 +1,44 @@
+#!/bin/bash
+# Run once as root (or with sudo) to set up the player2 account.
+# Usage: sudo setup-player2
+
+set -euo pipefail
+
+USER2=player2
+
+if id "$USER2" &>/dev/null; then
+    echo "User '$USER2' already exists — skipping creation."
+else
+    useradd -m -s /bin/bash \
+        -c "Player 2" \
+        "$USER2"
+    echo "Created user: $USER2"
+    echo "Set a password for $USER2:"
+    passwd "$USER2"
+fi
+
+# Add to groups needed for GPU/input/audio/gamemode access
+for grp in video input render audio seat gamemode; do
+    if getent group "$grp" &>/dev/null; then
+        usermod -aG "$grp" "$USER2"
+    fi
+done
+
+# Allow main user to launch steam as player2 without a password prompt
+SUDOERS_FILE=/etc/sudoers.d/player2-steam
+cat > "$SUDOERS_FILE" <<EOF
+# Allow any wheel-group user to launch the player2 steam session
+%wheel ALL=(player2) NOPASSWD: /usr/local/bin/launch-steam-p2
+EOF
+chmod 440 "$SUDOERS_FILE"
+
+# Create XDG_RUNTIME_DIR for player2
+PLAYER2_UID=$(id -u "$USER2")
+RUNTIME_DIR="/run/user/${PLAYER2_UID}"
+mkdir -p "$RUNTIME_DIR"
+chown "${USER2}:${USER2}" "$RUNTIME_DIR"
+chmod 700 "$RUNTIME_DIR"
+
+echo ""
+echo "Done. player2 is ready."
+echo "To launch: press Super+F8 in Hyprland, or run: launch-steam-p2"

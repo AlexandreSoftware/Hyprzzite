@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# hypr-wallpaper — pick a wallpaper from ~/Pictures/Wallpapers via wofi
+# and apply it live via hyprpaper IPC
+
+WALL_DIR="$HOME/Pictures/Wallpapers"
+
+if [[ ! -d "$WALL_DIR" ]] || [[ -z "$(ls -A "$WALL_DIR" 2>/dev/null)" ]]; then
+    dunstify -u normal "Wallpaper" "No images found in $WALL_DIR"
+    exit 1
+fi
+
+selected=$(find "$WALL_DIR" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) \
+    | sort \
+    | xargs -I{} basename {} \
+    | wofi --dmenu --prompt "Wallpaper" --insensitive)
+
+[[ -z "$selected" ]] && exit 0
+
+full_path="$WALL_DIR/$selected"
+
+# Preload and apply on all monitors
+hyprctl hyprpaper preload "$full_path"
+for monitor in $(hyprctl monitors -j | grep -oP '"name":\s*"\K[^"]+'); do
+    hyprctl hyprpaper wallpaper "$monitor,$full_path"
+done
+hyprctl hyprpaper unload unused

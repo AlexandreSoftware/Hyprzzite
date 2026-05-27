@@ -1,0 +1,15 @@
+#!/bin/bash
+# Launches a Steam Gaming Mode (gamescope) session for the current user on DP-2.
+# Usage: launch-steam-p1  (or Super+F7 in Hyprland)
+
+set -euo pipefail
+
+WAYLAND_SOCK_ABS="${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-0}"
+
+gamescope \
+    -W 2560 -H 1440 \
+    -r 180 \
+    -f \
+    --prefer-output DP-2 \
+    --steam \
+    -- steam -gamepadui -silent

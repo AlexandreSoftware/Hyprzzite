@@ -1,3 +1,10 @@
+/* Breeze Dark palette
+   bg       #24272c   bg-alt   #1b2027
+   fg       #eff0f1   fg-dim   #7f8c8d
+   accent   #3daee9   purple   #8e44ad
+   positive #27ae60   neutral  #f67400
+   negative #da4453                    */
+
 * {
     font-family: "JetBrainsMono Nerd Font", monospace;
     font-size: 13px;
@@ -6,32 +13,26 @@
     min-height: 0;
 }
 
-/* Breeze Dark palette:
-   bg       #24272c   bg-alt   #151c23
-   fg       #eff0f1   fg-dim   #7f8c8d
-   accent   #3daee9   accent2  #346c92
-   positive #7ea64b   neutral  #c7823d
-   negative #da4453                     */
-
 window#waybar {
-    background-color: rgba(36, 39, 44, 0.92);
+    background-color: rgba(27, 32, 39, 0.90);
     color: #eff0f1;
 }
 
 .modules-left,
 .modules-center,
 .modules-right {
-    background-color: rgba(21, 28, 35, 0.88);
+    background-color: rgba(36, 39, 44, 0.88);
     border-radius: 8px;
     margin: 4px 6px;
     padding: 0 8px;
 }
 
+/* ── Workspaces ────────────────────────────────────────────────────────────── */
 #workspaces button {
-    padding: 0 6px;
+    padding: 0 5px;
     color: #7f8c8d;
     border-radius: 6px;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
 }
 
 #workspaces button.active {
@@ -39,46 +40,80 @@ window#waybar {
     background-color: rgba(61, 174, 233, 0.15);
 }
 
+#workspaces button.occupied {
+    color: #bdc3c7;
+}
+
 #workspaces button:hover {
     color: #eff0f1;
     background-color: rgba(239, 240, 241, 0.08);
 }
 
+/* ── Window title ──────────────────────────────────────────────────────────── */
 #window {
     color: #bdc3c7;
     padding: 0 8px;
+    font-style: italic;
 }
 
+/* ── Media player ──────────────────────────────────────────────────────────── */
+#mpris {
+    color: #8e44ad;
+    padding: 0 10px;
+}
+
+/* ── Clock ─────────────────────────────────────────────────────────────────── */
 #clock {
     color: #3daee9;
     font-weight: bold;
     padding: 0 10px;
 }
 
+/* ── System stats ──────────────────────────────────────────────────────────── */
 #cpu {
-    color: #7ea64b;
+    color: #27ae60;
 }
 
 #memory {
-    color: #c7823d;
+    color: #f67400;
 }
 
+#temperature {
+    color: #27ae60;
+}
+
+#temperature.critical {
+    color: #da4453;
+}
+
+/* ── Battery ───────────────────────────────────────────────────────────────── */
 #battery {
-    color: #7ea64b;
+    color: #27ae60;
 }
 
 #battery.warning {
-    color: #c7823d;
+    color: #f67400;
 }
 
 #battery.critical {
     color: #da4453;
+    animation: battery-blink 1s steps(1) infinite;
 }
 
+@keyframes battery-blink {
+    50% { color: transparent; }
+}
+
+/* ── Network ───────────────────────────────────────────────────────────────── */
 #network {
     color: #3daee9;
 }
 
+#network.disconnected {
+    color: #7f8c8d;
+}
+
+/* ── Audio ─────────────────────────────────────────────────────────────────── */
 #pulseaudio {
     color: #85c1e9;
 }
@@ -87,16 +122,35 @@ window#waybar {
     color: #7f8c8d;
 }
 
+/* ── Tray ──────────────────────────────────────────────────────────────────── */
 #tray {
     padding: 0 4px;
 }
 
-#custom-power {
-    color: #da4453;
-    padding: 0 10px;
-    font-size: 16px;
+#tray > .passive {
+    -gtk-icon-effect: dim;
 }
 
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background-color: rgba(218, 68, 83, 0.2);
+    border-radius: 4px;
+}
+
+/* ── Power button ──────────────────────────────────────────────────────────── */
+#custom-power {
+    color: #da4453;
+    padding: 0 12px;
+    font-size: 15px;
+    transition: all 0.15s ease;
+}
+
+#custom-power:hover {
+    background-color: rgba(218, 68, 83, 0.15);
+    border-radius: 6px;
+}
+
+/* ── Tooltips ──────────────────────────────────────────────────────────────── */
 tooltip {
     background-color: rgba(36, 39, 44, 0.97);
     border: 1px solid rgba(61, 174, 233, 0.35);

@@ -3,35 +3,39 @@
     "position": "top",
     "height": 36,
     "spacing": 4,
+
     "modules-left": [
         "hyprland/workspaces",
         "hyprland/window"
     ],
     "modules-center": [
-        "clock"
+        "mpris"
     ],
     "modules-right": [
         "tray",
-        "pulseaudio",
-        "network",
+        "temperature",
         "cpu",
         "memory",
+        "pulseaudio",
+        "network",
         "battery",
+        "clock",
         "custom/power"
     ],
 
     "hyprland/workspaces": {
         "format": "{icon}",
         "format-icons": {
-            "1": "󰲠",
-            "2": "󰲢",
-            "3": "󰲤",
-            "4": "󰲦",
-            "5": "󰲨",
-            "active": "",
-            "default": ""
+            "1":  "󰲠", "2":  "󰲢", "3":  "󰲤",
+            "4":  "󰲦", "5":  "󰲨", "6":  "󰲪",
+            "7":  "󰲬", "8":  "󰲮", "9":  "󰲰", "10": "󰿬",
+            "active":  "",
+            "default": "·"
         },
-        "on-scroll-up": "hyprctl dispatch workspace e+1",
+        "persistent-workspaces": {
+            "*": 10
+        },
+        "on-scroll-up":   "hyprctl dispatch workspace e+1",
         "on-scroll-down": "hyprctl dispatch workspace e-1"
     },
 
@@ -40,47 +44,71 @@
         "separate-outputs": true
     },
 
+    "mpris": {
+        "format":          "{player_icon}  {title}",
+        "format-paused":   "{status_icon}  {title}",
+        "player-icons": {
+            "default":  "▶",
+            "spotify":  "",
+            "firefox":  "󰈹",
+            "chromium": ""
+        },
+        "status-icons": {
+            "paused": "⏸"
+        },
+        "max-length": 45,
+        "on-click": "playerctl play-pause"
+    },
+
     "clock": {
-        "format": "  {:%H:%M}",
-        "format-alt": "  {:%A, %B %d %Y}",
+        "format":     "  {:%H:%M}",
+        "format-alt": "  {:%a %b %d}",
         "tooltip-format": "<tt>{calendar}</tt>"
     },
 
     "cpu": {
-        "format": "󰻠 {usage}%",
-        "tooltip": false,
+        "format":   "󰻠 {usage}%",
+        "tooltip":  false,
         "interval": 2
     },
 
     "memory": {
-        "format": "󰍛 {used:.1f}G",
+        "format":   "󰍛 {used:.1f}G",
         "interval": 5
+    },
+
+    "temperature": {
+        "critical-threshold": 80,
+        "format":             "{icon} {temperatureC}°C",
+        "format-critical":    " {temperatureC}°C",
+        "format-icons":       ["", "", ""],
+        "tooltip":            false
     },
 
     "battery": {
         "states": {
-            "warning": 30,
+            "warning":  30,
             "critical": 15
         },
-        "format": "{icon} {capacity}%",
+        "format":          "{icon} {capacity}%",
         "format-charging": "󰂄 {capacity}%",
-        "format-plugged": "󰂄 {capacity}%",
-        "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
+        "format-plugged":  "󰂄 {capacity}%",
+        "format-icons":    ["󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"]
     },
 
     "network": {
-        "format-wifi": "󰤨 {essid}",
-        "format-ethernet": "󰈀 Wired",
-        "format-disconnected": "󰤭 Offline",
-        "tooltip-format-wifi": "{essid} ({signalStrength}%)",
+        "format-wifi":       "󰤨 {essid}",
+        "format-ethernet":   "󰈀 Wired",
+        "format-disconnected":"󰤭 Offline",
+        "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}",
         "on-click": "nm-connection-editor"
     },
 
     "pulseaudio": {
-        "format": "{icon} {volume}%",
+        "format":       "{icon} {volume}%",
         "format-muted": "󰝟 Muted",
         "format-icons": {
-            "default": ["󰕿", "󰖀", "󰕾"]
+            "default": ["󰕿","󰖀","󰕾"]
         },
         "on-click": "pavucontrol"
     },
@@ -90,8 +118,8 @@
     },
 
     "custom/power": {
-        "format": "⏻",
-        "tooltip": false,
-        "on-click": "hyprctl dispatch exit"
+        "format":   "⏻",
+        "tooltip":  false,
+        "on-click": "wlogout"
     }
 }

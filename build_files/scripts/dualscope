@@ -1,0 +1,304 @@
+#!/usr/bin/bash
+# dualscope — Two full Steam Gaming Mode sessions on separate monitors.
+# Replicates gamescope-session-plus environment for Decky, upscaling, MangoHUD.
+#
+# Player 1 (current user) → DP-2 @ 2560x1440 180Hz
+# Player 2 (player2)      → DP-3 @ 3840x2160 144Hz
+#
+# Usage: dualscope
+# Prerequisites: run 'sudo setup-player2' once first.
+
+set -euo pipefail
+
+USER2="player2"
+USER2_UID=$(id -u "$USER2")
+USER2_HOME="/var/home/${USER2}"
+USER2_RUNTIME="/run/user/${USER2_UID}"
+
+SESSION_CONFIG="/usr/share/gamescope-session-plus/sessions.d/steam"
+
+# ── Dependency check ───────────────────────────────────────────────────────────
+for cmd in gamescope steam setfacl runuser mangoapp; do
+    command -v "$cmd" &>/dev/null || { echo "Error: '$cmd' not found." >&2; exit 1; }
+done
+id "$USER2" &>/dev/null || { echo "Run 'sudo setup-player2' first." >&2; exit 1; }
+
+# ── Common gamescope-session-plus environment ──────────────────────────────────
+setup_gsp_env() {
+    export ENABLE_GAMESCOPE_WSI=1
+    export QT_QPA_PLATFORM=xcb
+    export SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS=0
+    export GAMESCOPE_NV12_COLORSPACE=k_EStreamColorspace_BT601
+    export VKD3D_SWAPCHAIN_LATENCY_FRAMES=3
+    export WINEDLLOVERRIDES=dxgi=n
+    export vk_xwayland_wait_ready=false
+    export INTEL_DEBUG=norbc
+    export mesa_glthread=true
+    export XDG_SESSION_TYPE=x11
+
+    # Steam gaming mode specific vars (from sessions.d/steam)
+    export STEAM_GAMESCOPE_VRR_SUPPORTED=1
+    export STEAM_GAMESCOPE_DYNAMIC_REFRESH_IN_STEAM_SUPPORTED=0
+    export STEAM_MANGOAPP_PRESETS_SUPPORTED=1
+    export STEAM_USE_MANGOAPP=1
+    export STEAM_USE_DYNAMIC_VRS=1
+    export STEAM_GAMESCOPE_HAS_TEARING_SUPPORT=1
+    export STEAM_GAMESCOPE_TEARING_SUPPORTED=1
+    export STEAM_GAMESCOPE_HDR_SUPPORTED=1
+    export STEAM_ENABLE_VOLUME_HANDLER=1
+    export SRT_URLOPEN_PREFER_STEAM=1
+    export STEAM_DISABLE_AUDIO_DEVICE_SWITCHING=1
+    export STEAM_MULTIPLE_XWAYLANDS=1
+    export STEAM_GAMESCOPE_DYNAMIC_FPSLIMITER=1
+    export STEAM_GAMESCOPE_NIS_SUPPORTED=1
+    export STEAM_GAMESCOPE_FANCY_SCALING_SUPPORT=1
+    export STEAM_GAMESCOPE_COLOR_MANAGED=1
+    export STEAM_GAMESCOPE_VIRTUAL_WHITE=1
+    export STEAM_DISABLE_MANGOAPP_ATOM_WORKAROUND=1
+    export STEAM_MANGOAPP_HORIZONTAL_SUPPORTED=1
+    export STEAM_ALLOW_DRIVE_UNMOUNT=1
+    export STEAM_ALLOW_DRIVE_ADOPT=1
+    export QT_IM_MODULE=steam
+    export GTK_IM_MODULE=Steam
+    export XCURSOR_THEME=steam
+    export XCURSOR_SCALE=256
+}
+
+# ── Build a gamescope command for one player ───────────────────────────────────
+# Args: <output> <width> <height> <refresh> <stats-pipe> <startup-socket>
+build_gamescopecmd() {
+    local output="$1" w="$2" h="$3" r="$4" stats="$5" socket="$6"
+
+    local HDR_OPTIONS=""
+    if [[ "${ENABLE_GAMESCOPE_HDR:-0}" == "1" ]] && gamescope --help 2>&1 | grep -q -- "--hdr-enabled"; then
+        HDR_OPTIONS="--hdr-enabled --hdr-itm-enable"
+        export ENABLE_HDR_WSI=1
+        export DXVK_HDR=1
+    fi
+
+    echo "gamescope \
+        -W $w -H $h -w $w -h $h \
+        -r $r \
+        --prefer-output $output \
+        --xwayland-count 2 \
+        --default-touch-mode 4 \
+        --hide-cursor-delay 3000 \
+        --fade-out-duration 200 \
+        --steam \
+        $HDR_OPTIONS \
+        -R $socket -T $stats"
+}
+
+# ── Launch one full session ────────────────────────────────────────────────────
+# Mirrors the gamescope-session-plus startup socket protocol.
+launch_session() {
+    local label="$1"
+    local gamescopecmd="$2"
+    local steamcmd="$3"
+    local tmpdir="$4"
+
+    local socket="${tmpdir}/startup.socket"
+    local stats="${tmpdir}/stats.pipe"
+    mkfifo -- "$stats" "$socket"
+
+    local MANGOHUD_CONFIGFILE; MANGOHUD_CONFIGFILE=$(mktemp /tmp/mangohud.XXXXXXXX)
+    local RADV_FORCE_VRS_CONFIG_FILE; RADV_FORCE_VRS_CONFIG_FILE=$(mktemp /tmp/radv_vrs.XXXXXXXX)
+    local GAMESCOPE_LIMITER_FILE; GAMESCOPE_LIMITER_FILE=$(mktemp /tmp/gamescope-limiter.XXXXXXXX)
+    echo "no_display" > "$MANGOHUD_CONFIGFILE"
+    echo "1x1" > "$RADV_FORCE_VRS_CONFIG_FILE"
+
+    export MANGOHUD_CONFIGFILE RADV_FORCE_VRS_CONFIG_FILE GAMESCOPE_LIMITER_FILE GAMESCOPE_STATS="$stats"
+
+    echo "[$label] Starting gamescope..."
+    eval "$gamescopecmd" &
+    local gamescope_pid=$!
+
+    if read -r -t 15 response_x_display response_wl_display <> "$socket"; then
+        export DISPLAY="$response_x_display"
+        export GAMESCOPE_WAYLAND_DISPLAY="$response_wl_display"
+        echo "[$label] Gamescope ready — DISPLAY=$DISPLAY"
+    else
+        echo "[$label] Gamescope failed to start!" >&2
+        kill "$gamescope_pid" 2>/dev/null || true
+        return 1
+    fi
+
+    # Start mangoapp overlay
+    (while true; do mangoapp; sleep 5; done) &
+
+    echo "[$label] Launching Steam..."
+    eval "$steamcmd" &
+
+    echo $gamescope_pid
+}
+
+# ── Input device assignment ────────────────────────────────────────────────────
+select_devices() {
+    echo ""
+    echo "Input devices:"
+    local -a devices
+    readarray -t devices < <(ls /dev/input/by-id/ 2>/dev/null | grep -v "\-event-" || true)
+    if [[ ${#devices[@]} -eq 0 ]]; then
+        readarray -t devices < <(ls /dev/input/ | grep -E "^js|^event")
+    fi
+    local i=1
+    for d in "${devices[@]}"; do
+        printf "  [%2d] %s\n" "$i" "$d"; ((i++))
+    done
+    echo ""
+
+    echo "Player 1 devices (space-separated numbers, Enter to skip):"
+    read -r -a p1_idx
+    for idx in "${p1_idx[@]}"; do
+        local d="${devices[$((idx-1))]}"
+        sudo chown "$(whoami):input" "/dev/input/by-id/$d" 2>/dev/null \
+            || sudo chown "$(whoami):input" "/dev/input/$d" 2>/dev/null || true
+        echo "  P1 ← $d"
+    done
+
+    echo "Player 2 devices (space-separated numbers, Enter to skip):"
+    read -r -a p2_idx
+    for idx in "${p2_idx[@]}"; do
+        local d="${devices[$((idx-1))]}"
+        sudo chown "${USER2}:input" "/dev/input/by-id/$d" 2>/dev/null \
+            || sudo chown "${USER2}:input" "/dev/input/$d" 2>/dev/null || true
+        echo "  P2 ← $d"
+    done
+}
+
+restore_devices() {
+    for d in /dev/input/event* /dev/input/js*; do
+        sudo chown "root:input" "$d" 2>/dev/null || true
+    done
+}
+
+# ── Wayland + audio socket sharing for player2 ────────────────────────────────
+share_sockets_p2() {
+    local wayland_sock="${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-0}"
+    setfacl -m "u:${USER2}:x"  "$XDG_RUNTIME_DIR"
+    setfacl -m "u:${USER2}:rw" "$wayland_sock"
+    setfacl -m "u:${USER2}:rw" "${wayland_sock}.lock" 2>/dev/null || true
+
+    local pw_sock="${XDG_RUNTIME_DIR}/pipewire-0"
+    [[ -S "$pw_sock" ]] && setfacl -m "u:${USER2}:rw" "$pw_sock"
+
+    local pulse_dir="${XDG_RUNTIME_DIR}/pulse"
+    if [[ -d "$pulse_dir" ]]; then
+        setfacl -m "u:${USER2}:rx" "$pulse_dir"
+        setfacl -m "u:${USER2}:rw" "${pulse_dir}/native" 2>/dev/null || true
+    fi
+
+    if [[ ! -d "$USER2_RUNTIME" ]]; then
+        sudo mkdir -p "$USER2_RUNTIME"
+        sudo chown "${USER2}:${USER2}" "$USER2_RUNTIME"
+        sudo chmod 700 "$USER2_RUNTIME"
+    fi
+}
+
+# ── Cleanup ────────────────────────────────────────────────────────────────────
+P1_PID="" P2_PID=""
+cleanup() {
+    echo ""
+    echo "Shutting down dualscope..."
+    [[ -n "$P1_PID" ]] && kill "$P1_PID" 2>/dev/null || true
+    [[ -n "$P2_PID" ]] && kill "$P2_PID" 2>/dev/null || true
+    sudo pkill -u "$USER2" gamescope 2>/dev/null || true
+    sudo pkill -u "$USER2" steam     2>/dev/null || true
+    restore_devices
+    echo "Done."
+}
+trap cleanup EXIT INT TERM
+
+# ── Main ───────────────────────────────────────────────────────────────────────
+echo "Stopping any running Steam instances..."
+pkill -u "$(whoami)" steam 2>/dev/null || true
+sudo pkill -u "$USER2" steam 2>/dev/null || true
+sleep 1
+
+select_devices
+share_sockets_p2
+setup_gsp_env
+
+WAYLAND_SOCK_ABS="${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-0}"
+PW_SOCK_ABS="${XDG_RUNTIME_DIR}/pipewire-0"
+PULSE_SOCK_ABS="${XDG_RUNTIME_DIR}/pulse/native"
+
+STEAMCMD="steam -gamepadui -steamos3 -steampal -steamdeck"
+
+# ── Player 2 gamescope config ──────────────────────────────────────────────────
+# Use main user's tmp (writable) for p2 sockets — p2 gets access via ACL
+P2_TMPDIR=$(mktemp -d -t gamescope-p2.XXXXXXX)
+chmod 755 "$P2_TMPDIR"
+setfacl -m "u:${USER2}:rwx" "$P2_TMPDIR"
+
+P2_GSP_CMD=$(build_gamescopecmd DP-3 3840 2160 144 "${P2_TMPDIR}/stats.pipe" "${P2_TMPDIR}/startup.socket")
+
+echo "Launching Player 2 (DP-3, 4K@144Hz)..."
+sudo runuser -u "$USER2" -- env \
+    WAYLAND_DISPLAY="$WAYLAND_SOCK_ABS" \
+    XDG_RUNTIME_DIR="$USER2_RUNTIME" \
+    HOME="$USER2_HOME" \
+    PIPEWIRE_REMOTE="$PW_SOCK_ABS" \
+    PULSE_SERVER="unix:${PULSE_SOCK_ABS}" \
+    DISPLAY="" \
+    ENABLE_GAMESCOPE_WSI=1 \
+    STEAM_GAMESCOPE_VRR_SUPPORTED=1 \
+    STEAM_MANGOAPP_PRESETS_SUPPORTED=1 \
+    STEAM_USE_MANGOAPP=1 \
+    STEAM_GAMESCOPE_NIS_SUPPORTED=1 \
+    STEAM_GAMESCOPE_FANCY_SCALING_SUPPORT=1 \
+    STEAM_GAMESCOPE_HDR_SUPPORTED=1 \
+    STEAM_MULTIPLE_XWAYLANDS=1 \
+    STEAM_GAMESCOPE_DYNAMIC_FPSLIMITER=1 \
+    vk_xwayland_wait_ready=false \
+    VKD3D_SWAPCHAIN_LATENCY_FRAMES=3 \
+    WINEDLLOVERRIDES=dxgi=n \
+    bash -c "
+        mkfifo '${P2_TMPDIR}/stats.pipe' '${P2_TMPDIR}/startup.socket' 2>/dev/null || true
+        MANGOHUD_CONFIGFILE=\$(mktemp /tmp/mangohud.XXXXXXXX)
+        GAMESCOPE_LIMITER_FILE=\$(mktemp /tmp/gamescope-limiter.XXXXXXXX)
+        echo 'no_display' > \"\$MANGOHUD_CONFIGFILE\"
+        export MANGOHUD_CONFIGFILE GAMESCOPE_LIMITER_FILE GAMESCOPE_STATS='${P2_TMPDIR}/stats.pipe'
+        $P2_GSP_CMD &
+        gspid=\$!
+        if read -r -t 15 disp wldisp <> '${P2_TMPDIR}/startup.socket'; then
+            export DISPLAY=\"\$disp\" GAMESCOPE_WAYLAND_DISPLAY=\"\$wldisp\"
+            (while true; do mangoapp; sleep 5; done) &
+            $STEAMCMD
+        else
+            echo '[P2] Gamescope failed to start' >&2
+            kill \$gspid 2>/dev/null
+        fi
+        wait \$gspid 2>/dev/null || true
+    " &
+P2_PID=$!
+
+sleep 4
+
+# ── Player 1 gamescope ─────────────────────────────────────────────────────────
+P1_TMPDIR=$(mktemp -p "$XDG_RUNTIME_DIR" -d -t gamescope-p1.XXXXXXX)
+P1_GSP_CMD=$(build_gamescopecmd DP-2 2560 1440 180 "${P1_TMPDIR}/stats.pipe" "${P1_TMPDIR}/startup.socket")
+
+echo "Launching Player 1 (DP-2, 1440p@180Hz)..."
+GAMESCOPE_STATS="${P1_TMPDIR}/stats.pipe"
+export GAMESCOPE_STATS
+mkfifo -- "${P1_TMPDIR}/stats.pipe" "${P1_TMPDIR}/startup.socket"
+MANGOHUD_CONFIGFILE=$(mktemp /tmp/mangohud.XXXXXXXX)
+GAMESCOPE_LIMITER_FILE=$(mktemp /tmp/gamescope-limiter.XXXXXXXX)
+echo "no_display" > "$MANGOHUD_CONFIGFILE"
+export MANGOHUD_CONFIGFILE GAMESCOPE_LIMITER_FILE
+
+eval "$P1_GSP_CMD" &
+P1_PID=$!
+
+if read -r -t 15 disp wldisp <> "${P1_TMPDIR}/startup.socket"; then
+    export DISPLAY="$disp" GAMESCOPE_WAYLAND_DISPLAY="$wldisp"
+    echo "[P1] Gamescope ready — DISPLAY=$DISPLAY"
+    (while true; do mangoapp; sleep 5; done) &
+    eval "$STEAMCMD"
+else
+    echo "[P1] Gamescope failed to start!" >&2
+    exit 1
+fi
+
+wait "$P1_PID" 2>/dev/null || true

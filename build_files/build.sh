@@ -11,6 +11,7 @@ dnf5 install -y --skip-unavailable \
     hyprpaper \
     hyprlock \
     hypridle \
+    wlogout \
     xdg-desktop-portal-hyprland \
     xdg-desktop-portal-gtk
 
@@ -85,10 +86,23 @@ dnf5 install -y --skip-unavailable \
     socat \
     imagemagick
 
+### ── Install helper scripts ──────────────────────────────────────────────────
+install -Dm755 /ctx/scripts/setup-player2  /usr/local/bin/setup-player2
+install -Dm755 /ctx/scripts/dualscope      /usr/local/bin/dualscope
+install -Dm755 /ctx/scripts/hypr-help      /usr/local/bin/hypr-help
+install -Dm755 /ctx/scripts/hypr-wallpaper /usr/local/bin/hypr-wallpaper
+
+### ── Clean up SDDM session list ─────────────────────────────────────────────
+# Keep only: Plasma, Steam Gaming Mode, Hyprland
+rm -f /usr/share/wayland-sessions/gamescope-session.desktop
+rm -f /usr/share/wayland-sessions/plasma-steamos-wayland-oneshot.desktop
+rm -f /usr/share/xsessions/plasma-steamos-oneshot.desktop
+
 ### ── Install default configs into /etc/skel ──────────────────────────────────
 install -d /etc/skel/.config
 cp -r /ctx/config/* /etc/skel/.config/
 install -d /etc/skel/Pictures/Screenshots
+install -d /etc/skel/Pictures/Wallpapers
 
 ### ── Enable system units ─────────────────────────────────────────────────────
 systemctl enable bluetooth.service

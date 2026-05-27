@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# hypr-help — floating keybinding reference
+# Opened by Super+/ as a floating kitty window (class: hypr-help)
+
+B="\e[1m"          # bold
+R="\e[0m"          # reset
+BLU="\e[38;2;61;174;233m"
+PUR="\e[38;2;142;68;173m"
+GRN="\e[38;2;39;174;96m"
+ORA="\e[38;2;246;116;0m"
+RED="\e[38;2;218;68;83m"
+GRY="\e[38;2;127;140;141m"
+WHT="\e[38;2;239;240;241m"
+
+sec() { printf "\n${BLU}${B} %-40s${R}\n${GRY} %-40s${R}\n" "$1" "$(printf '─%.0s' $(seq 1 40))"; }
+row() { printf "  ${PUR}${B}%-28s${R}  ${WHT}%s${R}\n" "$1" "$2"; }
+dim() { printf "  ${GRY}%-28s  %s${R}\n" "$1" "$2"; }
+
+printf "\n${BLU}${B}  Hyprzzite  ·  Keybinding Reference${R}  ${GRY}(q to close)${R}\n"
+
+sec "Applications"
+row "Super + Enter"         "Terminal (kitty)"
+row "Super + Space"         "App launcher (wofi)"
+row "Super + E"             "File manager (thunar)"
+row "Super + Ctrl + L"      "Lock screen"
+row "Super + Ctrl + Q"      "Power menu (wlogout)"
+row "Super + /"             "This help screen"
+
+sec "Screenshots & Clipboard"
+row "Print"                 "Area screenshot → swappy"
+row "Super + Print"         "Full-screen → swappy"
+row "Super + Shift + Print" "Area screenshot → clipboard"
+row "Super + Ctrl + V"      "Clipboard history picker"
+
+sec "Window Management"
+row "Super + Q"             "Close window"
+row "Super + F"             "True fullscreen"
+row "Super + M"             "Maximize (keep bar)"
+row "Super + T"             "Toggle floating"
+row "Super + V"             "Toggle split direction"
+row "Super + P"             "Pseudotile"
+row "Super + O"             "Pin float to all workspaces"
+
+sec "Groups  (tab-like stacking)"
+row "Super + G"             "Toggle group"
+row "Super + ["             "Previous tab in group"
+row "Super + ]"             "Next tab in group"
+row "Super + Shift + G"     "Pop window out of group"
+
+sec "Scratchpad"
+row "Super + S"             "Toggle scratchpad"
+row "Super + Alt + S"       "Send window to scratchpad"
+
+sec "Focus  (arrows or vim hjkl)"
+row "Super + ← / H"         "Focus left"
+row "Super + → / L"         "Focus right"
+row "Super + ↑ / K"         "Focus up"
+row "Super + ↓ / J"         "Focus down"
+dim "Alt + Tab"              "Cycle windows forward"
+dim "Alt + Shift + Tab"      "Cycle windows backward"
+
+sec "Swap & Resize"
+row "Super + Shift + ←/→/↑/↓"  "Swap window"
+row "Super + Alt  + ←/→/↑/↓"  "Resize window"
+dim "Super + drag (LMB)"    "Move floating window"
+dim "Super + drag (RMB)"    "Resize floating window"
+
+sec "Workspaces  (1 – 10)"
+row "Super + [1–0]"          "Jump to workspace"
+row "Super + Shift + [1–0]"  "Move window (follow)"
+row "Super + Alt+Shift+[1–0]" "Move window (stay)"
+row "Super + Tab"            "Next workspace"
+row "Super + Shift + Tab"    "Previous workspace"
+dim "Super + scroll"         "Scroll through workspaces"
+
+sec "Multi-Monitor"
+row "Super + Ctrl + ←"       "Focus monitor left"
+row "Super + Ctrl + →"       "Focus monitor right"
+row "Super + Ctrl+Shift + ←" "Move window to monitor left"
+row "Super + Ctrl+Shift + →" "Move window to monitor right"
+
+sec "Media & Hardware Keys"
+row "XF86AudioRaiseVolume"  "Volume +5%  (OSD notification)"
+row "XF86AudioLowerVolume"  "Volume -5%"
+row "XF86AudioMute"         "Toggle mute"
+row "XF86AudioPlay/Pause"   "Play / Pause"
+row "XF86AudioNext/Prev"    "Next / Previous track"
+row "XF86Brightness Up/Down" "Screen brightness"
+
+sec "Dual Steam (Gaming)"
+row "Super + F8"             "Launch dual-scope session"
+
+printf "\n"

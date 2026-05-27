@@ -1,0 +1,37 @@
+#!/bin/bash
+# Launches a Steam Gaming Mode (gamescope nested) session for player2 on DP-3.
+# Must be run as the main (active Wayland) user — sudo handles the user switch.
+
+set -euo pipefail
+
+USER2=player2
+PLAYER2_UID=$(id -u "$USER2")
+RUNTIME_DIR="/run/user/${PLAYER2_UID}"
+
+# ── Ensure runtime dir exists ──────────────────────────────────────────────────
+if [[ ! -d "$RUNTIME_DIR" ]]; then
+    sudo mkdir -p "$RUNTIME_DIR"
+    sudo chown "${USER2}:${USER2}" "$RUNTIME_DIR"
+    sudo chmod 700 "$RUNTIME_DIR"
+fi
+
+# ── Share the active Wayland socket with player2 ───────────────────────────────
+# Use absolute path so libwayland doesn't look in player2's XDG_RUNTIME_DIR.
+WAYLAND_SOCK_ABS="${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-0}"
+# player2 needs execute on the runtime dir to traverse it, plus rw on the socket
+setfacl -m "u:${USER2}:x"  "$XDG_RUNTIME_DIR"
+setfacl -m "u:${USER2}:rw" "$WAYLAND_SOCK_ABS"
+setfacl -m "u:${USER2}:rw" "${WAYLAND_SOCK_ABS}.lock" 2>/dev/null || true
+
+# ── Launch gamescope as player2 on DP-3 (4K @ 144Hz) ─────────────────────────
+sudo -u "$USER2" \
+    WAYLAND_DISPLAY="$WAYLAND_SOCK_ABS" \
+    XDG_RUNTIME_DIR="$RUNTIME_DIR" \
+    DISPLAY="" \
+    gamescope \
+        -W 3840 -H 2160 \
+        -r 144 \
+        -f \
+        --prefer-output DP-3 \
+        --steam \
+        -- steam -gamepadui -silent
