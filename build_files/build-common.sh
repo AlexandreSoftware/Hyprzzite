@@ -112,13 +112,8 @@ RUSTDESK_VER=$(curl -fsSL https://api.github.com/repos/rustdesk/rustdesk/release
 dnf5 install -y \
     "https://github.com/rustdesk/rustdesk/releases/download/${RUSTDESK_VER}/rustdesk-${RUSTDESK_VER}-0.x86_64.rpm"
 
-### ── Waydroid ─────────────────────────────────────────────────────────────────
-curl -fsSL https://repo.waydro.id/waydroid.repo \
-    -o /etc/yum.repos.d/waydroid.repo
-dnf5 install -y waydroid
-
 ### ── EmuDeck dependencies ────────────────────────────────────────────────────
-dnf5 install -y --skip-unavailable rsync unzip p7zip p7zip-plugins
+dnf5 install -y --skip-unavailable rsync unzip p7zip p7zip-plugins scrcpy
 
 ### ── Gaming sysctl tweaks ────────────────────────────────────────────────────
 install -Dm644 /ctx/config/sysctl/gaming.conf /etc/sysctl.d/99-gaming.conf
@@ -192,7 +187,6 @@ systemctl enable bluetooth.service
 systemctl enable podman.socket
 systemctl enable ollama
 systemctl enable tailscaled
-systemctl enable waydroid-container
 # ProtonVPN: systemctl enable fails without running systemd; create symlink directly
 mkdir -p /etc/systemd/system/multi-user.target.wants
 ln -sf /usr/lib/systemd/system/me.proton.vpn.service \
