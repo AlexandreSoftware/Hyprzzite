@@ -119,4 +119,7 @@ mkdir -p /etc/skel/Pictures/Wallpapers
 ### ── Enable system units ─────────────────────────────────────────────────────
 systemctl enable bluetooth.service
 systemctl enable podman.socket
-systemctl enable me.proton.vpn.service
+# systemctl enable doesn't work without a running daemon; create the symlink directly
+mkdir -p /etc/systemd/system/multi-user.target.wants
+ln -sf /usr/lib/systemd/system/me.proton.vpn.service \
+    /etc/systemd/system/multi-user.target.wants/me.proton.vpn.service
