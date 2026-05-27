@@ -92,12 +92,7 @@ dnf5 install -y --skip-unavailable \
     distrobox
 
 ### ── lazygit ──────────────────────────────────────────────────────────────────
-LAZYGIT_VER=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest \
-    | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')
-curl -Lo /tmp/lazygit.tar.gz \
-    "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VER}/lazygit_${LAZYGIT_VER}_Linux_x86_64.tar.gz"
-tar -xzf /tmp/lazygit.tar.gz -C /tmp lazygit
-install -Dm755 /tmp/lazygit /usr/bin/lazygit
+dnf5 install -y --skip-unavailable lazygit
 
 ### ── mise (polyglot version manager) ────────────────────────────────────────
 curl https://mise.run | MISE_INSTALL_PATH=/usr/bin/mise sh
@@ -111,10 +106,10 @@ dnf5 install -y \
 dnf5 install -y --setopt=tsflags=noscripts proton-vpn-gnome-desktop
 
 ### ── RustDesk ─────────────────────────────────────────────────────────────────
-RUSTDESK_VER=$(curl -fsSL https://api.github.com/repos/rustdesk/rustdesk/releases/latest \
-    | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/')
-dnf5 install -y \
-    "https://github.com/rustdesk/rustdesk/releases/download/${RUSTDESK_VER}/rustdesk-${RUSTDESK_VER}-0.x86_64.rpm"
+RUSTDESK_VER="1.4.1"
+dnf5 install -y --skip-unavailable \
+    "https://github.com/rustdesk/rustdesk/releases/download/${RUSTDESK_VER}/rustdesk-${RUSTDESK_VER}-0.x86_64.rpm" \
+    || true
 
 ### ── EmuDeck dependencies ────────────────────────────────────────────────────
 dnf5 install -y --skip-unavailable rsync unzip p7zip p7zip-plugins scrcpy
