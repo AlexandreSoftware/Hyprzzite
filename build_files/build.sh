@@ -104,6 +104,25 @@ install -Dm755 /ctx/scripts/dualscope      /usr/bin/dualscope
 install -Dm755 /ctx/scripts/hypr-help      /usr/bin/hypr-help
 install -Dm755 /ctx/scripts/hypr-wallpaper /usr/bin/hypr-wallpaper
 
+### ── Hyprland session file (ensure it exists regardless of package version) ──
+mkdir -p /usr/share/wayland-sessions
+cat > /usr/share/wayland-sessions/hyprland.desktop << 'EOF'
+[Desktop Entry]
+Name=Hyprland
+Comment=An intelligent dynamic tiling Wayland compositor
+Exec=Hyprland
+Type=Application
+EOF
+
+### ── SDDM: override Bazzite's Steam autologin → Hyprland ────────────────────
+# zz-steamos-autologin.conf ships with Bazzite and autologins to the KDE/Steam
+# session; overwrite it to autologin to Hyprland instead.
+mkdir -p /etc/sddm.conf.d
+cat > /etc/sddm.conf.d/zz-steamos-autologin.conf << 'EOF'
+[Autologin]
+Session=hyprland.desktop
+EOF
+
 ### ── Clean up SDDM session list ─────────────────────────────────────────────
 # Keep only: Plasma, Steam Gaming Mode, Hyprland
 rm -f /usr/share/wayland-sessions/gamescope-session.desktop
@@ -115,6 +134,24 @@ mkdir -p /etc/skel/.config
 cp -r /ctx/config/* /etc/skel/.config/
 mkdir -p /etc/skel/Pictures/Screenshots
 mkdir -p /etc/skel/Pictures/Wallpapers
+
+### ── profile.d: auto-apply skel configs for existing users on first login ────
+# /etc/skel only populates for brand-new users; this handles users that already
+# existed before the rebase by copying any missing config dirs on login.
+cat > /etc/profile.d/hyprzzite-setup.sh << 'EOF'
+#!/bin/bash
+# Only run for interactive logins and only if the Hyprland config is missing
+[[ $- != *i* ]] && return
+[[ -f "$HOME/.config/hypr/hyprland.conf" ]] && return
+
+for dir in hypr waybar wofi wlogout dunst kitty; do
+    src="/etc/skel/.config/$dir"
+    dst="$HOME/.config/$dir"
+    [[ -d "$src" && ! -d "$dst" ]] && cp -r "$src" "$dst"
+done
+
+mkdir -p "$HOME/Pictures/Screenshots" "$HOME/Pictures/Wallpapers"
+EOF
 
 ### ── Enable system units ─────────────────────────────────────────────────────
 systemctl enable bluetooth.service
