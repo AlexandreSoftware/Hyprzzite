@@ -3,6 +3,8 @@
     "position": "top",
     "height": 36,
     "spacing": 4,
+    "exclusive": false,
+    "passthrough": false,
 
     "modules-left": [
         "hyprland/workspaces",
@@ -12,6 +14,11 @@
         "mpris"
     ],
     "modules-right": [
+        "custom/vikunja",
+        "custom/local-stats",
+        "custom/homeserver-stats",
+        "custom/deck-stats",
+        "custom/primary-monitor",
         "tray",
         "temperature",
         "cpu",
@@ -26,11 +33,18 @@
     "hyprland/workspaces": {
         "format": "{icon}",
         "format-icons": {
-            "1":  "󰲠", "2":  "󰲢", "3":  "󰲤",
-            "4":  "󰲦", "5":  "󰲨", "6":  "󰲪",
-            "7":  "󰲬", "8":  "󰲮", "9":  "󰲰", "10": "󰿬",
-            "active":  "",
-            "default": "·"
+            "editor-1":  "󰲠",
+            "editor-2":  "󰲢",
+            "browser":   "󰖟",
+            "messaging": "󰭹",
+            "editor-3":  "󰲨",
+            "free-1":    "󰏗",
+            "free-2":    "󰏗",
+            "steam-dev": "󰓓",
+            "media":     "󰎆",
+            "free-3":    "󰏗",
+            "active":    "",
+            "default":   "·"
         },
         "persistent-workspaces": {
             "*": 10
@@ -63,7 +77,8 @@
     "clock": {
         "format":     "  {:%H:%M}",
         "format-alt": "  {:%a %b %d}",
-        "tooltip-format": "<tt>{calendar}</tt>"
+        "tooltip-format": "<big>{:%B %Y}</big>\n<tt>{calendar}</tt>\n\n<b>Upcoming:</b>\n{exec}",
+        "exec": "khal list today 7d --format '{start-time} {title}' 2>/dev/null | head -5 || echo 'No events'"
     },
 
     "cpu": {
@@ -97,8 +112,8 @@
     },
 
     "network": {
-        "format-wifi":       "󰤨 {essid}",
-        "format-ethernet":   "󰈀 Wired",
+        "format-wifi":        "󰤨 {essid}",
+        "format-ethernet":    "󰈀 Wired",
         "format-disconnected":"󰤭 Offline",
         "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}",
         "on-click": "nm-connection-editor"
@@ -121,5 +136,54 @@
         "format":   "⏻",
         "tooltip":  false,
         "on-click": "wlogout"
+    },
+
+    "custom/local-stats": {
+        "exec": "~/.config/waybar/scripts/machine-stats.sh local",
+        "interval": 5,
+        "format": "󰍹 {}",
+        "tooltip": true,
+        "tooltip-format": "This machine",
+        "on-click": "kitty --class stats-popup -- btop"
+    },
+
+    "custom/homeserver-stats": {
+        "exec": "~/.config/waybar/scripts/machine-stats.sh homeserver",
+        "interval": 15,
+        "format": "󰒋 {}",
+        "tooltip": true,
+        "tooltip-format": "Home server",
+        "on-click": "xdg-open http://homeserver:9090",
+        "return-type": "text"
+    },
+
+    "custom/deck-stats": {
+        "exec": "~/.config/waybar/scripts/machine-stats.sh deck",
+        "interval": 15,
+        "format": "󱓔 {}",
+        "tooltip": true,
+        "tooltip-format": "Steam Deck",
+        "on-click": "kitty --class stats-popup -- ssh deck btop",
+        "return-type": "text"
+    },
+
+    "custom/primary-monitor": {
+        "exec": "hyprctl monitors -j | jq -r '.[] | select(.focused) | .name' 2>/dev/null || echo '?'",
+        "interval": 3,
+        "format": "󰍹 {}",
+        "tooltip": true,
+        "tooltip-format": "Click to cycle primary monitor",
+        "on-click": "hypr-primary-switch",
+        "on-click-right": "hypr-primary-switch --pick"
+    },
+
+    "custom/vikunja": {
+        "exec": "~/.config/waybar/scripts/vikunja-due.sh",
+        "interval": 300,
+        "format": "󰄲 {}",
+        "tooltip": true,
+        "tooltip-format": "Tasks due today — click to open Vikunja",
+        "on-click": "xdg-open \"$(grep '^VIKUNJA_URL=' ~/.config/ai/keys 2>/dev/null | cut -d= -f2-)\"",
+        "return-type": "text"
     }
 }

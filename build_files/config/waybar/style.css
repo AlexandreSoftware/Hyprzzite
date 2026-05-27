@@ -11,20 +11,32 @@
     border: none;
     border-radius: 0;
     min-height: 0;
+    transition: background 0.25s ease, color 0.15s ease;
 }
 
 window#waybar {
-    background-color: rgba(27, 32, 39, 0.90);
+    background: rgba(24, 27, 33, 0.35);
     color: #eff0f1;
+}
+
+window#waybar:hover {
+    background: rgba(24, 27, 33, 0.92);
 }
 
 .modules-left,
 .modules-center,
 .modules-right {
-    background-color: rgba(36, 39, 44, 0.88);
+    background-color: rgba(36, 39, 44, 0.75);
     border-radius: 8px;
     margin: 4px 6px;
     padding: 0 8px;
+    transition: background-color 0.25s ease;
+}
+
+window#waybar:hover .modules-left,
+window#waybar:hover .modules-center,
+window#waybar:hover .modules-right {
+    background-color: rgba(36, 39, 44, 0.97);
 }
 
 /* ── Workspaces ────────────────────────────────────────────────────────────── */
@@ -142,12 +154,48 @@ window#waybar {
     color: #da4453;
     padding: 0 12px;
     font-size: 15px;
-    transition: all 0.15s ease;
 }
 
 #custom-power:hover {
     background-color: rgba(218, 68, 83, 0.15);
     border-radius: 6px;
+}
+
+/* ── Machine stat modules ──────────────────────────────────────────────────── */
+#custom-local-stats {
+    color: #27ae60;
+    padding: 0 8px;
+}
+
+#custom-homeserver-stats {
+    color: #3daee9;
+    padding: 0 8px;
+}
+
+#custom-deck-stats {
+    color: #8e44ad;
+    padding: 0 8px;
+}
+
+/* ── Primary monitor indicator ─────────────────────────────────────────────── */
+#custom-primary-monitor {
+    color: #bdc3c7;
+    padding: 0 8px;
+    font-size: 11px;
+}
+
+#custom-primary-monitor:hover {
+    color: #3daee9;
+}
+
+/* ── Vikunja badge ─────────────────────────────────────────────────────────── */
+#custom-vikunja {
+    color: #f67400;
+    padding: 0 8px;
+}
+
+#custom-vikunja.clear {
+    color: #7f8c8d;
 }
 
 /* ── Tooltips ──────────────────────────────────────────────────────────────── */

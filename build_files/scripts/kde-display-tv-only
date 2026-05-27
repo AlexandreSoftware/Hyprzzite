@@ -1,0 +1,19 @@
+#!/bin/bash
+# Hisense TV only — full couch mode, 144Hz
+
+kscreen-doctor \
+    output.DP-1.enable \
+    output.DP-1.mode.3840x2160@144 \
+    output.DP-1.primary \
+    output.DP-2.disable \
+    output.DP-4.disable
+
+# Audio → Hisense HDMI
+SINK=$(pactl list sinks short | grep -i "dp-1\|hdmi" | awk '{print $2}' | head -1)
+[ -n "$SINK" ] && pactl set-default-sink "$SINK"
+
+# CEC: wake TV and set as active source
+echo "on 0" | cec-client -s -d 1 2>/dev/null &
+sleep 2 && echo "as" | cec-client -s -d 1 2>/dev/null &
+
+notify-send "Display Mode" "TV Only — couch mode (144Hz)"

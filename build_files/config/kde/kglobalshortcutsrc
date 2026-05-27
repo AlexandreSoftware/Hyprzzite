@@ -1,0 +1,37 @@
+[kwin]
+Switch One Desktop Down=Meta+Ctrl+Down,Meta+Ctrl+Down,Switch One Desktop Down
+Switch One Desktop Up=Meta+Ctrl+Up,Meta+Ctrl+Up,Switch One Desktop Up
+Switch One Desktop to the Left=Meta+Ctrl+Left,Meta+Ctrl+Left,Switch One Desktop to the Left
+Switch One Desktop to the Right=Meta+Ctrl+Right,Meta+Ctrl+Right,Switch One Desktop to the Right
+Window Close=Meta+Q,Alt+F4,Close Window
+Window Minimize=Meta+H,Meta+Alt+F9,Minimize Window
+Window to Next Screen=Meta+Shift+Right,,Move Window to Next Screen
+Window to Previous Screen=Meta+Shift+Left,,Move Window to Previous Screen
+
+[org.kde.dolphin.desktop]
+_launch=Meta+E,Meta+E,Open Dolphin
+
+[plasmashell]
+activate task manager entry 1=Meta+1,Meta+1,Activate Task Manager Entry 1
+activate task manager entry 2=Meta+2,Meta+2,Activate Task Manager Entry 2
+activate task manager entry 3=Meta+3,Meta+3,Activate Task Manager Entry 3
+activate task manager entry 4=Meta+4,Meta+4,Activate Task Manager Entry 4
+activate task manager entry 5=Meta+5,Meta+5,Activate Task Manager Entry 5
+
+[kde-display-esports-desk.desktop]
+_launch=Meta+F1,,Display Mode: Esports Desk (All 3, AOC primary)
+
+[kde-display-tv-desk.desktop]
+_launch=Meta+F2,,Display Mode: TV Desk (All 3, Hisense primary)
+
+[kde-display-aoc-only.desktop]
+_launch=Meta+F3,,Display Mode: AOC Only
+
+[kde-display-tv-only.desktop]
+_launch=Meta+F4,,Display Mode: TV Only (couch mode)
+
+[kde-primary-switch.desktop]
+_launch=Meta+F5,,Cycle Primary Monitor + Audio
+
+[kde-primary-switch-pick.desktop]
+_launch=Meta+Shift+F5,,Pick Primary Monitor

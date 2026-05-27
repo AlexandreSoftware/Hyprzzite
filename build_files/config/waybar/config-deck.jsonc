@@ -1,0 +1,107 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 30,
+    "spacing": 2,
+    "exclusive": true,
+
+    "modules-left": [
+        "hyprland/workspaces"
+    ],
+    "modules-center": [
+        "mpris"
+    ],
+    "modules-right": [
+        "tray",
+        "temperature",
+        "cpu",
+        "memory",
+        "pulseaudio",
+        "battery",
+        "clock",
+        "custom/power"
+    ],
+
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "format-icons": {
+            "1": "1", "2": "2", "3": "3",
+            "4": "4", "5": "5",
+            "active":  "",
+            "default": "·"
+        },
+        "persistent-workspaces": {
+            "*": 5
+        },
+        "on-scroll-up":   "hyprctl dispatch workspace e+1",
+        "on-scroll-down": "hyprctl dispatch workspace e-1"
+    },
+
+    "mpris": {
+        "format":          "{player_icon} {title}",
+        "format-paused":   "{status_icon} {title}",
+        "player-icons": {
+            "default": "▶",
+            "spotify": ""
+        },
+        "status-icons": {
+            "paused": "⏸"
+        },
+        "max-length": 28,
+        "on-click": "playerctl play-pause"
+    },
+
+    "clock": {
+        "format":     "{:%H:%M}",
+        "format-alt": "{:%a %b %d}",
+        "tooltip-format": "<tt>{calendar}</tt>"
+    },
+
+    "cpu": {
+        "format":   "󰻠{usage}%",
+        "tooltip":  false,
+        "interval": 3
+    },
+
+    "memory": {
+        "format":   "󰍛{used:.0f}G",
+        "interval": 5
+    },
+
+    "temperature": {
+        "critical-threshold": 85,
+        "format":             "{temperatureC}°C",
+        "format-critical":    "🔥{temperatureC}°C",
+        "tooltip":            false
+    },
+
+    "battery": {
+        "states": {
+            "warning":  30,
+            "critical": 15
+        },
+        "format":          "{icon}{capacity}%",
+        "format-charging": "󰂄{capacity}%",
+        "format-icons":    ["󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"]
+    },
+
+    "pulseaudio": {
+        "format":       "{icon}{volume}%",
+        "format-muted": "󰝟",
+        "format-icons": {
+            "default": ["󰕿","󰖀","󰕾"]
+        },
+        "on-click": "pavucontrol"
+    },
+
+    "tray": {
+        "spacing": 4,
+        "icon-size": 14
+    },
+
+    "custom/power": {
+        "format":   "⏻",
+        "tooltip":  false,
+        "on-click": "wlogout"
+    }
+}

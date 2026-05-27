@@ -1,0 +1,35 @@
+#!/bin/bash
+# hyprzzite-alarm — schedule a one-shot alarm using systemd-run
+# Usage: hyprzzite-alarm "HH:MM" ["Message"]
+set -euo pipefail
+
+TIME="${1:-}"
+MSG="${2:-Alarm}"
+
+if [ -z "$TIME" ]; then
+    TIME=$(zenity --entry \
+        --title="Set Alarm" \
+        --text="Time (HH:MM):" \
+        2>/dev/null || exit 0)
+fi
+
+[ -z "$TIME" ] && exit 0
+
+# Validate format
+if ! echo "$TIME" | grep -qE '^([01][0-9]|2[0-3]):[0-5][0-9]$'; then
+    notify-send -u critical "Alarm" "Invalid time format — use HH:MM"
+    exit 1
+fi
+
+UNIT_NAME="alarm-$(echo "$TIME" | tr : -)-$(date +%s)"
+
+systemd-run --user \
+    --on-calendar="$TIME" \
+    --unit="$UNIT_NAME" \
+    bash -c "
+        paplay /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga 2>/dev/null &
+        dunstify -u critical -t 0 -a 'Alarm' '⏰ $MSG' 'Time: $TIME'
+        hyprctl dispatch dpms on 2>/dev/null || true
+    "
+
+notify-send "Alarm set" "Alarm at $TIME — $MSG"

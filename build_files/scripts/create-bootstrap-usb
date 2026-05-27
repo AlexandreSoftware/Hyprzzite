@@ -1,0 +1,138 @@
+#!/bin/bash
+# create-bootstrap-usb — interactive helper to build a bootstrap USB
+# Run on your main machine. Requires: age, lsblk, mkfs.fat, tar
+set -euo pipefail
+
+RED='\033[0;31m'; GRN='\033[0;32m'; YLW='\033[0;33m'; RST='\033[0m'
+info()  { echo -e "${GRN}[+]${RST} $*"; }
+warn()  { echo -e "${YLW}[!]${RST} $*"; }
+fatal() { echo -e "${RED}[✗]${RST} $*" >&2; exit 1; }
+ask()   { read -rp "    $* " REPLY; echo "$REPLY"; }
+askpass() { read -rsp "    $* " REPLY; echo; echo "$REPLY"; }
+
+command -v age    &>/dev/null || fatal "age not installed (dnf install age)"
+command -v mkfs.fat &>/dev/null || fatal "dosfstools not installed"
+
+echo
+echo "══════════════════════════════════════════"
+echo "  Hyprzzite Bootstrap USB Creator"
+echo "══════════════════════════════════════════"
+echo
+
+# ── Select USB drive ───────────────────────────────────────────────────────────
+info "Available removable drives:"
+lsblk -o NAME,SIZE,MODEL,RM | grep -E "^NAME|1$" || true
+echo
+USB=$(ask "Enter device path (e.g. /dev/sdb) — ALL DATA WILL BE ERASED:")
+[ -b "$USB" ] || fatal "Not a block device: $USB"
+
+SIZE=$(lsblk -b -o SIZE -n "$USB" | head -1)
+[ "$SIZE" -lt 104857600 ] && fatal "Drive too small (need ≥ 100MB)"
+
+warn "This will ERASE $USB. Type YES to confirm:"
+CONFIRM=$(ask "")
+[ "$CONFIRM" = "YES" ] || { info "Aborted."; exit 0; }
+
+# ── Format ─────────────────────────────────────────────────────────────────────
+info "Formatting $USB as FAT32 labelled SETUP..."
+sudo wipefs -a "$USB"
+sudo parted -s "$USB" mklabel msdos mkpart primary fat32 1MiB 100%
+sudo mkfs.fat -F32 -n SETUP "${USB}1"
+
+MOUNT=$(mktemp -d)
+sudo mount "${USB}1" "$MOUNT"
+trap 'sudo umount "$MOUNT" 2>/dev/null; rmdir "$MOUNT" 2>/dev/null' EXIT
+
+SETUP="$MOUNT/SETUP"
+sudo mkdir -p "$SETUP"
+TMPDIR=$(mktemp -d)
+trap 'sudo umount "$MOUNT" 2>/dev/null; rmdir "$MOUNT" 2>/dev/null; rm -rf "$TMPDIR"' EXIT
+
+# ── Collect secrets ────────────────────────────────────────────────────────────
+info "Collecting secrets (leave blank to skip any item)..."
+echo
+
+SSH_KEY=$(ask "Path to SSH private key [~/.ssh/id_ed25519]:")
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
+[ -f "$SSH_KEY" ] || { warn "SSH key not found, skipping"; SSH_KEY=""; }
+
+SERVERS=$(ask "Servers to register SSH key (comma-separated, e.g. user@host):")
+GITHUB_TOKEN=$(ask "GitHub fine-grained PAT:")
+TAILSCALE_KEY=$(ask "Tailscale pre-auth key:")
+ANTHROPIC_KEY=$(ask "Anthropic API key:")
+HOMELAB_URL=$(ask "Homelab Ollama URL [http://homeserver:11434]:")
+VIKUNJA_TOKEN=$(ask "Vikunja API token:")
+VIKUNJA_URL=$(ask "Vikunja URL:")
+CALDAV_URL=$(ask "CalDAV URL (Radicale):")
+CALDAV_USER=$(ask "CalDAV username:")
+CALDAV_PASS=$(askpass "CalDAV password:")
+GITCONFIG=$(ask "Path to .gitconfig [~/.gitconfig]:")
+GITCONFIG="${GITCONFIG:-$HOME/.gitconfig}"
+KEEPASS=$(ask "Path to KeePass .kdbx file (blank to skip):")
+SPOTIFY_DIR=$(ask "Spotify session dir (~/.var/app/com.spotify.Client, blank to skip):")
+VESKTOP_DIR=$(ask "Vesktop session dir (~/.var/app/dev.vencord.Vesktop, blank to skip):")
+
+# ── Build archive ──────────────────────────────────────────────────────────────
+info "Building secrets archive..."
+S="$TMPDIR/secrets"
+mkdir -p "$S/ssh" "$S/app-sessions"
+
+[ -n "$SSH_KEY" ] && [ -f "$SSH_KEY" ] && {
+    cp "$SSH_KEY" "$S/ssh/github_key"
+    cp "${SSH_KEY}.pub" "$S/ssh/github_key.pub" 2>/dev/null || true
+}
+
+# ssh_config entry
+if [ -n "$SSH_KEY" ]; then
+    cat > "$S/ssh_config" <<EOF
+Host github.com
+    IdentityFile ~/.ssh/github_key
+    User git
+EOF
+fi
+
+[ -n "$SERVERS" ] && echo "${SERVERS//,/$'\n'}" > "$S/servers.txt"
+[ -n "$GITHUB_TOKEN" ]    && echo "$GITHUB_TOKEN"    > "$S/github_token"
+[ -n "$TAILSCALE_KEY" ]   && echo "$TAILSCALE_KEY"   > "$S/tailscale_authkey"
+[ -n "$ANTHROPIC_KEY" ]   && echo "$ANTHROPIC_KEY"   > "$S/anthropic_api_key"
+[ -n "$HOMELAB_URL" ]     && echo "$HOMELAB_URL"      > "$S/homelab_ollama_url"
+[ -n "$VIKUNJA_TOKEN" ]   && echo "$VIKUNJA_TOKEN"   > "$S/vikunja_token"
+[ -n "$VIKUNJA_URL" ]     && echo "$VIKUNJA_URL"     > "$S/vikunja_url"
+[ -n "$CALDAV_URL" ]      && echo "$CALDAV_URL"      > "$S/caldav_url"
+[ -n "$CALDAV_USER" ]     && echo "$CALDAV_USER"     > "$S/caldav_user"
+[ -n "$CALDAV_PASS" ]     && echo "$CALDAV_PASS"     > "$S/caldav_pass"
+[ -f "$GITCONFIG" ]       && cp "$GITCONFIG"         "$S/gitconfig"
+[ -n "$KEEPASS" ] && [ -f "$KEEPASS" ] && cp "$KEEPASS" "$S/keepass.kdbx"
+
+[ -n "$SPOTIFY_DIR" ] && [ -d "$SPOTIFY_DIR" ] && {
+    mkdir -p "$S/app-sessions/spotify"
+    cp -r "$SPOTIFY_DIR/." "$S/app-sessions/spotify/"
+}
+[ -n "$VESKTOP_DIR" ] && [ -d "$VESKTOP_DIR" ] && {
+    mkdir -p "$S/app-sessions/vesktop"
+    cp -r "$VESKTOP_DIR/." "$S/app-sessions/vesktop/"
+}
+
+# ── Encrypt ────────────────────────────────────────────────────────────────────
+AGE_PASS=$(askpass "Set age encryption passphrase for secrets.age:")
+AGE_PASS2=$(askpass "Confirm passphrase:")
+[ "$AGE_PASS" = "$AGE_PASS2" ] || fatal "Passphrases do not match"
+
+info "Encrypting..."
+tar -czC "$TMPDIR" secrets | \
+    age --encrypt --passphrase <(echo "$AGE_PASS") \
+    -o "$TMPDIR/secrets.age"
+
+# ── Copy to USB ────────────────────────────────────────────────────────────────
+info "Copying to USB..."
+sudo cp "$TMPDIR/secrets.age" "$SETUP/secrets.age"
+
+# Copy bootstrap.sh from this script's directory
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+sudo cp "$SCRIPT_DIR/bootstrap.sh" "$SETUP/bootstrap.sh"
+sudo chmod +x "$SETUP/bootstrap.sh"
+
+sudo sync
+info "Done! Bootstrap USB ready at ${USB}1 (SETUP)"
+info "Secrets: $SETUP/secrets.age"
+info "Script:  $SETUP/bootstrap.sh"

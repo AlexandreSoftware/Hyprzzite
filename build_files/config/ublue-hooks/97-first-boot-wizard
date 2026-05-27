@@ -1,0 +1,8 @@
+#!/usr/bin/bash
+source /usr/lib/ublue/setup-services/libsetup.sh
+version-script first-boot-wizard user 1 || exit 0
+
+# Only run inside a live Hyprland session
+[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] || exit 0
+
+kitty --class hyprzzite-setup -- bash -c "hyprzzite-setup; echo 'Press Enter to close'; read"

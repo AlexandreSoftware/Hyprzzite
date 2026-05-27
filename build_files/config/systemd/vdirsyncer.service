@@ -1,0 +1,6 @@
+[Unit]
+Description=vdirsyncer CalDAV sync
+
+[Service]
+Type=oneshot
+ExecStart=vdirsyncer sync

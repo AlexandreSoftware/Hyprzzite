@@ -1,0 +1,21 @@
+#!/bin/bash
+# All 3 monitors on — AOC (DP-2) as primary, max refresh, VRR on AOC
+
+kscreen-doctor \
+    output.DP-2.enable \
+    output.DP-2.mode.2560x1440@180 \
+    output.DP-2.primary \
+    output.DP-2.vrrpolicy.2 \
+    output.DP-1.enable \
+    output.DP-1.mode.3840x2160@144 \
+    output.DP-4.enable \
+    output.DP-4.mode.1920x1080@60
+
+# Audio → desk speakers/headphones (not HDMI)
+SINK=$(pactl list sinks short | grep -iv hdmi | grep -v monitor | awk '{print $2}' | head -1)
+[ -n "$SINK" ] && pactl set-default-sink "$SINK"
+
+# CEC: standby TV (optional — skip if TV controls bother you)
+# echo "standby 0" | cec-client -s -d 1 2>/dev/null &
+
+notify-send "Display Mode" "Esports Desk — AOC primary (180Hz)"

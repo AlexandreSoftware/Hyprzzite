@@ -1,0 +1,31 @@
+#!/bin/bash
+# kde-primary-switch — cycle or pick primary monitor in KDE + switch audio
+
+MAP="$HOME/.config/hyprzzite/monitor-audio-map.env"
+[ -f "$MAP" ] && source "$MAP"
+
+MONITORS=($(kscreen-doctor -o 2>/dev/null | grep "^Output:" | awk '{print $2}'))
+
+if [ "$1" = "--pick" ]; then
+    TARGET=$(printf '%s\n' "${MONITORS[@]}" \
+        | kdialog --combobox "Select primary monitor:" "${MONITORS[@]}" 2>/dev/null)
+    [ -z "$TARGET" ] && exit 0
+else
+    CURRENT=$(kscreen-doctor -o 2>/dev/null | grep -B1 "priority: 1" \
+        | grep "^Output:" | awk '{print $2}')
+    IDX=$(printf '%s\n' "${MONITORS[@]}" | grep -n "^${CURRENT}$" | cut -d: -f1)
+    IDX=${IDX:-1}
+    NEXT=$(( IDX % ${#MONITORS[@]} + 1 ))
+    TARGET=$(printf '%s\n' "${MONITORS[@]}" | sed -n "${NEXT}p")
+fi
+
+kscreen-doctor output."$TARGET".primary 2>/dev/null
+
+SINK_KEY="${TARGET//-/_}_SINK"
+SINK="${!SINK_KEY:-}"
+if [ -n "$SINK" ]; then
+    pactl set-default-sink "$SINK"
+    notify-send "Primary Monitor" "$TARGET — audio → $SINK"
+else
+    notify-send "Primary Monitor" "$TARGET (no audio mapped — set in hyprzzite-settings)"
+fi

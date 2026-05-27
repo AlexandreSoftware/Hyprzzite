@@ -1,0 +1,32 @@
+#!/bin/bash
+# hypr-primary-switch — cycle or pick primary monitor in Hyprland + switch audio
+
+MAP="$HOME/.config/hyprzzite/monitor-audio-map.env"
+[ -f "$MAP" ] && source "$MAP"
+
+MONITORS=($(hyprctl monitors -j | jq -r '.[].name'))
+CURRENT=$(hyprctl monitors -j | jq -r '.[] | select(.focused) | .name')
+
+if [ "$1" = "--pick" ]; then
+    TARGET=$(printf '%s\n' "${MONITORS[@]}" | wofi --dmenu --prompt "Primary monitor:")
+    [ -z "$TARGET" ] && exit 0
+else
+    IDX=$(printf '%s\n' "${MONITORS[@]}" | grep -n "^${CURRENT}$" | cut -d: -f1)
+    IDX=${IDX:-1}
+    NEXT=$(( IDX % ${#MONITORS[@]} + 1 ))
+    TARGET=$(printf '%s\n' "${MONITORS[@]}" | sed -n "${NEXT}p")
+fi
+
+hyprctl dispatch focusmonitor "$TARGET"
+hyprctl dispatch moveworkspacetomonitor 1 "$TARGET"
+hyprctl dispatch moveworkspacetomonitor 2 "$TARGET"
+
+# Switch audio sink if mapping exists
+SINK_KEY="${TARGET//-/_}_SINK"
+SINK="${!SINK_KEY:-}"
+if [ -n "$SINK" ]; then
+    pactl set-default-sink "$SINK"
+    dunstify -h string:x-dunst-stack-tag:monitor "󰍹 Primary: $TARGET" "Audio → $SINK"
+else
+    dunstify -h string:x-dunst-stack-tag:monitor "󰍹 Primary: $TARGET" "No audio mapped — configure in hyprzzite-settings"
+fi

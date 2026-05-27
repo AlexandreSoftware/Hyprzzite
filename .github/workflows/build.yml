@@ -27,8 +27,19 @@ concurrency:
 
 jobs:
   build_push:
-    name: Build and push image
+    name: Build and push ${{ matrix.image_suffix || 'desktop' }}
     runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - containerfile: Containerfile
+            image_suffix: ""
+            description: "Desktop (AMD, Hyprland + KDE + Gamescope)"
+          - containerfile: Containerfile.deck
+            image_suffix: "-deck"
+            description: "Steam Deck (Hyprland + Gamescope HTPC)"
 
     permissions:
       contents: read
@@ -97,10 +108,8 @@ jobs:
         uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
         with:
           containerfiles: |
-            ./Containerfile
-          # Postfix image name with -custom to make it a little more descriptive
-          # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
-          image: ${{ env.IMAGE_NAME }}
+            ./${{ matrix.containerfile }}
+          image: ${{ env.IMAGE_NAME }}${{ matrix.image_suffix }}
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           oci: false
@@ -148,7 +157,7 @@ jobs:
           REGISTRY_PASSWORD: ${{ github.token }}
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
-          image: ${{ env.IMAGE_NAME }}
+          image: ${{ env.IMAGE_NAME }}${{ matrix.image_suffix }}
           tags: ${{ steps.metadata.outputs.tags }}
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PASSWORD }}
@@ -166,7 +175,7 @@ jobs:
       - name: Sign container image
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         run: |
-          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}"
+          IMAGE_FULL="${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}${{ matrix.image_suffix }}"
           for tag in ${{ steps.metadata.outputs.tags }}; do
             cosign sign -y --key env://COSIGN_PRIVATE_KEY $IMAGE_FULL:$tag
           done

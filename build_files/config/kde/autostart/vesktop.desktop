@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Vesktop
+Exec=vesktop --start-minimized
+Icon=vesktop
+Type=Application

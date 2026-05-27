@@ -1,0 +1,12 @@
+[Unit]
+Description=LiteLLM unified AI proxy (dev distrobox)
+After=ollama.service
+
+[Service]
+ExecStart=distrobox-enter dev -- litellm --config %h/.config/litellm/config.yaml --port 4000
+Restart=on-failure
+RestartSec=5
+EnvironmentFile=-%h/.config/ai/keys
+
+[Install]
+WantedBy=default.target

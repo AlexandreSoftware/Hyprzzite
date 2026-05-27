@@ -1,0 +1,13 @@
+#!/bin/bash
+# hyprzzite-settings — launch the persistent settings web UI
+set -euo pipefail
+
+if ! systemctl --user is-active --quiet hyprzzite-settings.service 2>/dev/null; then
+    systemctl --user start hyprzzite-settings.service 2>/dev/null || {
+        # Fall back: run directly in background if service not available
+        python3 "$HOME/.config/hyprzzite-settings/server.py" &
+        sleep 1
+    }
+fi
+
+xdg-open http://localhost:9090

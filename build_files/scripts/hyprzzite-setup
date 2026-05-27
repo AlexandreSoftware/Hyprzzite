@@ -1,0 +1,149 @@
+#!/bin/bash
+# hyprzzite-setup — first-boot wizard and re-runnable setup
+set -euo pipefail
+
+TITLE="Hyprzzite Setup"
+KEYS_FILE="$HOME/.config/ai/keys"
+LITELLM_CFG="$HOME/.config/litellm/config.yaml"
+
+mkdir -p "$HOME/.config/ai"
+touch "$KEYS_FILE"
+
+# ── Step 1: Display configuration ─────────────────────────────────────────────
+DISPLAY_CHOICE=$(zenity --list \
+    --title="$TITLE" \
+    --text="How do you want to configure your displays?" \
+    --column="Option" \
+    "Auto-detect (recommended for most machines)" \
+    "Apply: Main Desktop (Hisense + AOC + Dell, 3 monitors)" \
+    "Manual config (launch nwg-displays)" \
+    2>/dev/null || echo "Auto-detect (recommended for most machines)")
+
+case "$DISPLAY_CHOICE" in
+  *"Main Desktop"*)
+    apply-desktop-monitor-profile ;;
+  *"Manual"*)
+    nwg-displays ;;
+esac
+
+# ── Step 2: AI backend keys ────────────────────────────────────────────────────
+ANTHROPIC_KEY=$(zenity --entry \
+    --title="$TITLE" \
+    --text="Anthropic API key (leave blank to skip):" \
+    --hide-text \
+    2>/dev/null || true)
+
+HOMELAB_URL=$(zenity --entry \
+    --title="$TITLE" \
+    --text="Homelab Ollama URL (e.g. http://homeserver:11434)\nLeave blank to skip:" \
+    2>/dev/null || true)
+
+# Write keys file
+{
+    [ -n "$ANTHROPIC_KEY" ] && echo "ANTHROPIC_API_KEY=$ANTHROPIC_KEY"
+} > "$KEYS_FILE"
+
+# Patch LiteLLM config with homelab URL
+if [ -n "$HOMELAB_URL" ] && [ -f "$LITELLM_CFG" ]; then
+    python3 - "$HOMELAB_URL" <<'PY'
+import sys, pathlib
+try:
+    import yaml
+except ImportError:
+    import subprocess, sys as _sys
+    subprocess.check_call([_sys.executable, '-m', 'pip', 'install', 'pyyaml', '-q'])
+    import yaml
+
+cfg = pathlib.Path.home() / ".config/litellm/config.yaml"
+data = yaml.safe_load(cfg.read_text())
+model_names = [m.get('model_name','') for m in data.get('model_list', [])]
+if 'homelab/default' not in model_names:
+    data.setdefault('model_list', []).append({
+        'model_name': 'homelab/default',
+        'litellm_params': {'model': 'openai/default', 'api_base': sys.argv[1]}
+    })
+    cfg.write_text(yaml.dump(data, default_flow_style=False))
+    print(f"Added homelab endpoint: {sys.argv[1]}")
+else:
+    print("Homelab endpoint already configured")
+PY
+    echo "HOMELAB_OLLAMA_URL=$HOMELAB_URL" >> "$KEYS_FILE"
+fi
+
+# Restart LiteLLM to pick up new config
+systemctl --user restart litellm.service 2>/dev/null || true
+
+# ── Step 3: Optional installs ──────────────────────────────────────────────────
+OPTS=$(zenity --list \
+    --checklist \
+    --title="$TITLE" \
+    --text="Select optional tools to install:" \
+    --column="Install" \
+    --column="Tool" \
+    --column="Description" \
+    FALSE "SillyTavern"  "AI chat / creative roleplay (Podman container, port 8000)" \
+    FALSE "EmuDeck"      "Emulation suite — RetroArch, Dolphin, PCSX2, RPCS3" \
+    FALSE "Waydroid"     "Android container with Google Play Store" \
+    FALSE "Postman"      "API testing (Flatpak)" \
+    2>/dev/null || true)
+
+echo "$OPTS" | grep -q "SillyTavern" && install-sillytavern
+
+echo "$OPTS" | grep -q "EmuDeck" && {
+    notify-send "EmuDeck" "Downloading installer..."
+    curl -fsSL "https://github.com/dragoonDorise/EmuDeck/releases/latest/download/emudeck.sh" \
+        -o /tmp/emudeck.sh && bash /tmp/emudeck.sh
+}
+
+echo "$OPTS" | grep -q "Waydroid" && {
+    kitty --class hyprzzite-setup -- bash -c '
+        set -e
+        notify-send "Waydroid" "Initialising Android container..."
+        sudo waydroid init \
+            --system_type GAPPS \
+            --system_ota https://ota.waydro.id/system \
+            --vendor_ota https://ota.waydro.id/vendor
+        sudo systemctl start waydroid-container
+        waydroid session start &
+        sleep 8
+        curl -fsSL https://raw.githubusercontent.com/casualsnek/waydroid_script/main/main.py \
+            -o /tmp/waydroid-extras.py
+        sudo python3 /tmp/waydroid-extras.py install gapps
+        notify-send "Waydroid" "Android ready"
+        read -p "Press Enter to close"
+    '
+}
+
+echo "$OPTS" | grep -q "Postman" && \
+    flatpak install -y --user flathub com.getpostman.Postman 2>/dev/null || true
+
+# ── Step 4: Default browser ────────────────────────────────────────────────────
+BROWSER=$(zenity --list \
+    --title="$TITLE" \
+    --text="Choose your default browser:" \
+    --column="Browser" \
+    "Firefox" \
+    "Zen Browser" \
+    "Ungoogled Chromium" \
+    2>/dev/null || echo "Firefox")
+
+case "$BROWSER" in
+    "Firefox")             xdg-settings set default-web-browser org.mozilla.firefox.desktop ;;
+    "Zen Browser")         xdg-settings set default-web-browser io.github.zen_browser.zen.desktop ;;
+    "Ungoogled Chromium")  xdg-settings set default-web-browser com.github.Eloston.UngoogledChromium.desktop ;;
+esac
+
+# ── Step 5: Steam shortcuts ────────────────────────────────────────────────────
+if command -v steam &>/dev/null; then
+    zenity --question \
+        --title="$TITLE" \
+        --text="Add media apps (Jellyfin, Spotify, YouTube TV…) as Steam shortcuts?\n(Requires Steam to have been launched once)" \
+        --ok-label="Yes" --cancel-label="Skip" \
+        2>/dev/null && setup-steam-shortcuts || true
+fi
+
+# ── Done ───────────────────────────────────────────────────────────────────────
+zenity --info \
+    --title="$TITLE" \
+    --text="Setup complete!\n\nRe-run anytime: hyprzzite-setup\nSettings panel: Super+Ctrl+," \
+    2>/dev/null || true

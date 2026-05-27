@@ -1,0 +1,21 @@
+#!/bin/bash
+# apply-desktop-monitor-profile — apply the 3-monitor desktop layout
+set -euo pipefail
+
+PROFILE="$HOME/.config/hypr/profiles/desktop-3monitor.conf"
+TARGET="$HOME/.config/hypr/monitors.conf"
+
+if [ ! -f "$PROFILE" ]; then
+    mkdir -p "$(dirname "$PROFILE")"
+    cat > "$PROFILE" <<'EOF'
+# Desktop 3-monitor layout — Hisense (left), AOC (centre), Dell (right)
+monitor = DP-1, 3840x2160@144, 0x0,     1.5
+monitor = DP-2, 2560x1440@180, 2560x0,  1.0
+monitor = DP-4, 1920x1080@60,  5120x0,  1.0
+monitor = ,     preferred, auto, 1
+EOF
+fi
+
+cp "$PROFILE" "$TARGET"
+hyprctl reload 2>/dev/null || true
+notify-send "Displays" "3-monitor desktop layout applied"

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Steam
+Exec=steam
+Icon=steam
+Type=Application
+Categories=Game;
+X-KDE-autostart-condition=steam

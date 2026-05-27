@@ -1,0 +1,39 @@
+#!/bin/bash
+# gamescope-htpc-session — Gamescope HTPC session entry point
+
+export XDG_SESSION_TYPE=wayland
+export XDG_CURRENT_DESKTOP=gamescope
+
+# Start PipeWire audio if not running
+pipewire &
+wireplumber &
+
+# CEC: announce as active source on TV
+echo "as" | cec-client -s -d 1 2>/dev/null &
+
+# Bootstrap USB: connect Tailscale so homelab is reachable
+USB_PATH=$(lsblk -o LABEL,PATH | awk '/^SETUP/{print $2}' | head -1)
+if [ -n "$USB_PATH" ]; then
+    MOUNT=$(mktemp -d)
+    mount "$USB_PATH" "$MOUNT" 2>/dev/null
+    if [ -f "$MOUNT/SETUP/tailscale_key" ]; then
+        sudo tailscale up --authkey="$(cat "$MOUNT/SETUP/tailscale_key")" 2>/dev/null &
+    fi
+    umount "$MOUNT" 2>/dev/null
+    rmdir "$MOUNT" 2>/dev/null
+fi
+
+# arRPC for Discord Rich Presence
+arrpc &
+
+# Spotify in background (controllable from Steam overlay via Decky)
+flatpak run com.spotify.Client --minimized 2>/dev/null &
+
+# Launch Steam inside gamescope
+exec gamescope \
+    --width 1920 --height 1080 \
+    --framerate-limit 60 \
+    --hdr-enabled \
+    --adaptive-sync \
+    --mangoapp \
+    -- steam -gamepadui -steamos3 -steampal

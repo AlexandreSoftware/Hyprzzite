@@ -1,0 +1,35 @@
+#!/bin/bash
+# install-decky-plugins — install Decky Loader plugins
+# Run from a desktop session after Decky Loader is active
+
+set -euo pipefail
+
+DECKY_CLI="$HOME/.local/bin/decky"
+
+if ! command -v decky &>/dev/null && [ ! -f "$DECKY_CLI" ]; then
+    echo "Decky CLI not found. Is Decky Loader installed?"
+    exit 1
+fi
+
+PLUGINS=(
+    "CSS Loader"
+    "SteamGridDB"
+    "Pause Games"
+    "ProtonDB Badges"
+    "Bluetooth"
+    "PowerTools"
+    "FrameGen Addon"
+)
+
+for plugin in "${PLUGINS[@]}"; do
+    echo "Installing: $plugin"
+    decky plugin install "$plugin" 2>/dev/null || \
+        notify-send "Decky" "Could not install: $plugin (may not exist yet)"
+done
+
+# Spotify plugin — try both known names
+decky plugin install "Spotify Deck" 2>/dev/null || \
+    decky plugin install "Audio Loader" 2>/dev/null || \
+    notify-send "Decky" "No Spotify plugin found — install manually from Decky store"
+
+notify-send "Decky Plugins" "Installation complete"

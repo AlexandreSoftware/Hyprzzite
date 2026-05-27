@@ -1,0 +1,125 @@
+#!/bin/bash
+# setup-steam-shortcuts — add media/utility apps as non-Steam games
+# Uses field-level VDF patching to avoid corrupting existing shortcuts
+
+set -euo pipefail
+
+STEAM_DIR="$HOME/.steam/steam"
+VDF="$STEAM_DIR/userdata/$(ls "$STEAM_DIR/userdata/" | head -1)/config/shortcuts.vdf"
+
+if [ ! -f "$VDF" ]; then
+    echo "shortcuts.vdf not found — launch Steam once first"
+    exit 1
+fi
+
+python3 << PYEOF
+import struct, os, pathlib, time
+
+vdf_path = pathlib.Path("$VDF")
+data = vdf_path.read_bytes()
+
+shortcuts = [
+    {
+        "appname": "Jellyfin",
+        "exe": '"flatpak" "run" "com.github.iwalton3.jellyfin-media-player"',
+        "StartDir": os.path.expanduser("~"),
+        "LaunchOptions": "",
+    },
+    {
+        "appname": "Spotify",
+        "exe": '"flatpak" "run" "com.spotify.Client"',
+        "StartDir": os.path.expanduser("~"),
+        "LaunchOptions": "",
+    },
+    {
+        "appname": "Plexamp",
+        "exe": '"flatpak" "run" "com.plexamp.Plexamp"',
+        "StartDir": os.path.expanduser("~"),
+        "LaunchOptions": "",
+    },
+    {
+        "appname": "Plex HTPC",
+        "exe": '"flatpak" "run" "tv.plex.PlexHTPC"',
+        "StartDir": os.path.expanduser("~"),
+        "LaunchOptions": "",
+    },
+    {
+        "appname": "YouTube TV",
+        "exe": '"chromium-browser"',
+        "StartDir": os.path.expanduser("~"),
+        "LaunchOptions": (
+            '--app=https://youtube.com/tv --kiosk '
+            '--user-data-dir=' + os.path.expanduser('~/.var/app/youtube-tv') + ' '
+            '--no-first-run --no-default-browser-check '
+            '--user-agent="Mozilla/5.0 (SMART-TV; Linux; Tizen 5.0) '
+            'AppleWebKit/538.1 (KHTML, like Gecko) Version/5.0 TV Safari/538.1"'
+        ),
+    },
+    {
+        "appname": "Twitch",
+        "exe": '"chromium-browser"',
+        "StartDir": os.path.expanduser("~"),
+        "LaunchOptions": (
+            '--app=https://twitch.tv --kiosk '
+            '--user-data-dir=' + os.path.expanduser('~/.var/app/twitch') + ' '
+            '--no-first-run --no-default-browser-check'
+        ),
+    },
+    {
+        "appname": "VLC",
+        "exe": '"flatpak" "run" "org.videolan.VLC"',
+        "StartDir": os.path.expanduser("~"),
+        "LaunchOptions": "",
+    },
+]
+
+# Create user-data dirs for browser shortcuts
+for d in ['youtube-tv', 'twitch']:
+    os.makedirs(os.path.expanduser(f'~/.var/app/{d}'), exist_ok=True)
+
+def encode_shortcut(idx, s):
+    def field(t, name, val):
+        if t == 1:
+            return b'\x01' + name.encode() + b'\x00' + val.encode() + b'\x00'
+        elif t == 2:
+            return b'\x02' + name.encode() + b'\x00' + struct.pack('<I', val)
+        elif t == 0:
+            return b'\x00' + name.encode() + b'\x00' + val + b'\x08'
+    entry  = b'\x00' + str(idx).encode() + b'\x00'
+    entry += field(2, 'appid', idx * 0x10000000)
+    entry += field(1, 'appname', s['appname'])
+    entry += field(1, 'exe', s['exe'])
+    entry += field(1, 'StartDir', s['StartDir'])
+    entry += field(1, 'icon', '')
+    entry += field(1, 'ShortcutPath', '')
+    entry += field(1, 'LaunchOptions', s['LaunchOptions'])
+    entry += field(2, 'IsHidden', 0)
+    entry += field(2, 'AllowDesktopConfig', 1)
+    entry += field(2, 'AllowOverlay', 1)
+    entry += field(2, 'OpenVR', 0)
+    entry += field(2, 'LastPlayTime', int(time.time()))
+    entry += b'\x08'
+    return entry
+
+# Backup original
+vdf_path.with_suffix('.vdf.bak').write_bytes(data)
+
+# Find insertion point (before final \x08\x08)
+insert_at = data.rfind(b'\x08\x08')
+if insert_at == -1:
+    print("Could not find VDF footer — aborting")
+    exit(1)
+
+# Count existing shortcuts to get starting index
+existing_count = data.count(b'\x00appname\x00')
+
+new_entries = b''
+for i, shortcut in enumerate(shortcuts):
+    new_entries += encode_shortcut(existing_count + i, shortcut)
+
+new_data = data[:insert_at] + new_entries + data[insert_at:]
+vdf_path.write_bytes(new_data)
+print(f"Added {len(shortcuts)} shortcuts to Steam")
+PYEOF
+
+echo "Steam shortcuts added. Restart Steam to see them."

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Gamescope HTPC
+Comment=Steam Big Picture couch/TV mode
+Exec=/usr/bin/gamescope-htpc-session
+Type=Application
+DesktopNames=gamescope-htpc

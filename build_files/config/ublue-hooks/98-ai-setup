@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+source /usr/lib/ublue/setup-services/libsetup.sh
+version-script ai-setup user 1 || exit 0
+
+# Pull Open WebUI image in background
+podman pull ghcr.io/open-webui/open-webui:main &
+
+# Enable and start user AI services
+systemctl --user enable --now litellm.service
+systemctl --user enable --now open-webui.service

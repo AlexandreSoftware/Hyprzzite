@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=KDE Connect
+Exec=/usr/libexec/kdeconnectd
+Icon=kdeconnect
+Type=Application

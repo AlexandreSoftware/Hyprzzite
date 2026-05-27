@@ -1,0 +1,23 @@
+[general]
+status_path = "~/.local/share/vdirsyncer/status/"
+
+[pair personal_cal]
+a = "personal_local"
+b = "personal_remote"
+collections = ["from a", "from b"]
+
+[storage personal_local]
+type = "filesystem"
+path = "~/.local/share/calendars/"
+fileext = ".ics"
+
+[storage personal_remote]
+type = "caldav"
+# URL, username and password are injected by bootstrap.sh into ~/.config/ai/keys
+# and read at runtime — edit ~/.config/ai/keys to set:
+#   CAL_URL=http://homeserver:5232/USER/calendar/
+#   CAL_USER=youruser
+#   CAL_PASS=yourpassword
+url.fetch = ["command", "bash", "-c", "grep ^CAL_URL ~/.config/ai/keys | cut -d= -f2"]
+username.fetch = ["command", "bash", "-c", "grep ^CAL_USER ~/.config/ai/keys | cut -d= -f2"]
+password.fetch = ["command", "bash", "-c", "grep ^CAL_PASS ~/.config/ai/keys | cut -d= -f2"]

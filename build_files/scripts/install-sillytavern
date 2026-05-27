@@ -1,0 +1,30 @@
+#!/bin/bash
+set -euo pipefail
+
+DATA="$HOME/.local/share/sillytavern"
+SERVICE="$HOME/.config/systemd/user/sillytavern.service"
+
+mkdir -p "$DATA"
+
+podman pull ghcr.io/sillytavern/sillytavern:latest
+
+mkdir -p "$(dirname "$SERVICE")"
+cat > "$SERVICE" <<EOF
+[Unit]
+Description=SillyTavern
+After=litellm.service
+
+[Service]
+ExecStart=podman run --rm --name sillytavern \
+    -p 8000:8000 \
+    -v ${DATA}:/home/node/app/data \
+    ghcr.io/sillytavern/sillytavern:latest
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+EOF
+
+systemctl --user daemon-reload
+systemctl --user enable --now sillytavern.service
+notify-send "SillyTavern" "Running at http://localhost:8000"

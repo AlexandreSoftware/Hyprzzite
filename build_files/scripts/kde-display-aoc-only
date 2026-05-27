@@ -1,0 +1,19 @@
+#!/bin/bash
+# AOC only — pure esports, no multi-monitor interference, 180Hz
+
+kscreen-doctor \
+    output.DP-2.enable \
+    output.DP-2.mode.2560x1440@180 \
+    output.DP-2.primary \
+    output.DP-2.vrrpolicy.2 \
+    output.DP-1.disable \
+    output.DP-4.disable
+
+# Audio → desk speakers/headphones
+SINK=$(pactl list sinks short | grep -iv hdmi | grep -v monitor | awk '{print $2}' | head -1)
+[ -n "$SINK" ] && pactl set-default-sink "$SINK"
+
+# CEC: standby TV since it's disabled
+echo "standby 0" | cec-client -s -d 1 2>/dev/null &
+
+notify-send "Display Mode" "AOC Only — esports (180Hz, no distractions)"

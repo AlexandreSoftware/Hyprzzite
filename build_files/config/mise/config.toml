@@ -1,0 +1,8 @@
+[tools]
+node = "lts"
+python = "3.12"
+rust = "stable"
+go = "latest"
+
+[settings]
+experimental = true
