@@ -9,7 +9,6 @@ dnf5 -y copr enable solopasha/hyprland
 ### ── Hyprland ecosystem ───────────────────────────────────────────────────────
 dnf5 install -y --skip-unavailable \
     hyprland \
-    hyprland-qtutils \
     hyprpaper \
     hyprlock \
     hypridle \
@@ -57,6 +56,10 @@ dnf5 install -y --skip-unavailable \
     vdirsyncer \
     libcec \
     cec-utils
+
+# hyprland-qtutils / hyprland-qt-support require Qt private API matching the COPR build.
+# Install with --skip-broken so a Qt version mismatch doesn't abort the whole build.
+dnf5 install -y --skip-unavailable --skip-broken hyprland-qtutils || true
 
 dnf5 -y copr disable solopasha/hyprland
 
