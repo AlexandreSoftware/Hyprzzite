@@ -1,0 +1,24 @@
+#!/bin/bash
+# Setup Waydroid via Bazzite's built-in tooling.
+# Run this once after first boot as your normal user.
+
+set -euo pipefail
+
+echo "==> Setting up Waydroid using Bazzite's script..."
+
+if command -v ujust &>/dev/null; then
+    ujust setup-waydroid
+elif [ -f /usr/share/ublue-os/just/60-custom.just ]; then
+    echo "Run: ujust setup-waydroid"
+    echo "ujust not found in PATH — is ublue-os-just installed?"
+    exit 1
+else
+    echo "ERROR: Bazzite's ujust not found. Are you running on Hyprzzite?"
+    exit 1
+fi
+
+echo ""
+echo "==> Waydroid installed. To initialise Android:"
+echo "    waydroid init"
+echo "    systemctl start waydroid-container"
+echo "    waydroid session start"

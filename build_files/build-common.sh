@@ -166,6 +166,7 @@ install -Dm755 /ctx/scripts/hyprzzite-setup        /usr/bin/hyprzzite-setup
 install -Dm755 /ctx/scripts/hyprzzite-settings     /usr/bin/hyprzzite-settings
 install -Dm755 /ctx/scripts/hyprzzite-alarm        /usr/bin/hyprzzite-alarm
 install -Dm755 /ctx/scripts/install-sillytavern    /usr/bin/install-sillytavern
+install -Dm755 /ctx/scripts/setup-waydroid         /usr/bin/setup-waydroid
 install -Dm755 /ctx/scripts/apply-desktop-monitor-profile \
     /usr/bin/apply-desktop-monitor-profile
 
