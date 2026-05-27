@@ -66,7 +66,7 @@ dnf5 install -y --skip-unavailable qt5-qtvirtualkeyboard
 dnf5 install -y --skip-unavailable obs-studio
 
 ### ── Tailscale ────────────────────────────────────────────────────────────────
-curl -fsSL https://pkgs.tailscale.com/stable/fedora/41/tailscale.repo \
+curl -fsSL "https://pkgs.tailscale.com/stable/fedora/$(rpm -E %fedora)/tailscale.repo" \
     -o /etc/yum.repos.d/tailscale.repo
 dnf5 install -y tailscale
 
