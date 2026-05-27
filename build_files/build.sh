@@ -77,20 +77,35 @@ dnf5 install -y --skip-unavailable \
 ### ── XDG user dirs ───────────────────────────────────────────────────────────
 dnf5 install -y --skip-unavailable xdg-user-dirs xdg-user-dirs-gtk
 
-### ── Communication ────────────────────────────────────────────────────────────
-dnf5 install -y --skip-unavailable discord
+### ── Communication (Discord RPM from official source, not in Fedora repos) ───
+dnf5 install -y "https://discord.com/api/download?platform=linux&format=rpm"
+
+### ── ProtonVPN (official Fedora repo) ────────────────────────────────────────
+dnf5 install -y "https://repo.protonvpn.com/fedora-$(rpm -E %fedora)-stable/protonvpn-stable-release/protonvpn-stable-release-1.0.3-1.noarch.rpm"
+dnf5 install -y proton-vpn-gnome-desktop
+
+### ── RustDesk (latest RPM from GitHub releases) ─────────────────────────────
+RUSTDESK_VER=$(curl -fsSL https://api.github.com/repos/rustdesk/rustdesk/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/')
+dnf5 install -y "https://github.com/rustdesk/rustdesk/releases/download/${RUSTDESK_VER}/rustdesk-${RUSTDESK_VER}-0.x86_64.rpm"
 
 ### ── Misc utilities used by common Hyprland configs ──────────────────────────
 dnf5 install -y --skip-unavailable \
     jq \
     socat \
-    imagemagick
+    ImageMagick
 
 ### ── Install helper scripts ──────────────────────────────────────────────────
-install -Dm755 /ctx/scripts/setup-player2  /usr/local/bin/setup-player2
-install -Dm755 /ctx/scripts/dualscope      /usr/local/bin/dualscope
-install -Dm755 /ctx/scripts/hypr-help      /usr/local/bin/hypr-help
-install -Dm755 /ctx/scripts/hypr-wallpaper /usr/local/bin/hypr-wallpaper
+# Use cp+chmod instead of install -D to avoid "File exists" on /usr/local
+mkdir -p /usr/local/bin
+cp /ctx/scripts/setup-player2  /usr/local/bin/setup-player2
+cp /ctx/scripts/dualscope      /usr/local/bin/dualscope
+cp /ctx/scripts/hypr-help      /usr/local/bin/hypr-help
+cp /ctx/scripts/hypr-wallpaper /usr/local/bin/hypr-wallpaper
+chmod 755 \
+    /usr/local/bin/setup-player2 \
+    /usr/local/bin/dualscope \
+    /usr/local/bin/hypr-help \
+    /usr/local/bin/hypr-wallpaper
 
 ### ── Clean up SDDM session list ─────────────────────────────────────────────
 # Keep only: Plasma, Steam Gaming Mode, Hyprland
