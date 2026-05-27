@@ -71,7 +71,7 @@ curl -fsSL "https://pkgs.tailscale.com/stable/fedora/39/tailscale.repo" \
 dnf5 install -y tailscale
 
 ### ── Ollama (AMD ROCm + Vulkan fallback) ─────────────────────────────────────
-curl -fsSL https://ollama.com/install.sh | sh
+curl -fsSL https://ollama.com/install.sh | OLLAMA_INSTALL_DIR=/usr sh
 
 ### ── Dev tools ────────────────────────────────────────────────────────────────
 dnf5 install -y --skip-unavailable \
