@@ -2,10 +2,21 @@
 # hyprzzite-settings — launch the persistent settings web UI
 set -euo pipefail
 
+REPO_SERVER="$(dirname "$(realpath "$0")")/../config/hyprzzite-settings/server.py"
+SKEL_SERVER="$HOME/.config/hyprzzite-settings/server.py"
+
 if ! systemctl --user is-active --quiet hyprzzite-settings.service 2>/dev/null; then
     systemctl --user start hyprzzite-settings.service 2>/dev/null || {
-        # Fall back: run directly in background if service not available
-        python3 "$HOME/.config/hyprzzite-settings/server.py" &
+        # Find server.py: installed path first, repo fallback for pre-rebase dev
+        if [ -f "$SKEL_SERVER" ]; then
+            SERVER="$SKEL_SERVER"
+        elif [ -f "$REPO_SERVER" ]; then
+            SERVER="$REPO_SERVER"
+        else
+            notify-send -u critical "hyprzzite-settings" "server.py not found"
+            exit 1
+        fi
+        python3 "$SERVER" &
         sleep 1
     }
 fi

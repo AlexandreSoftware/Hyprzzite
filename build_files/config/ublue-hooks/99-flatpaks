@@ -1,42 +1,49 @@
 #!/usr/bin/bash
 source /usr/lib/ublue/setup-services/libsetup.sh
-version-script flatpaks user 1 || exit 0
+version-script flatpaks user 2 || exit 0
 
 flatpak remote-add --user --if-not-exists flathub \
     https://flathub.org/repo/flathub.flatpakrepo
 
-flatpak install -y --user flathub \
-    org.mozilla.firefox \
-    com.github.Eloston.UngoogledChromium \
-    io.github.zen_browser.zen \
-    com.discordapp.Discord \
-    dev.vencord.Vesktop \
-    dev.ferdium.Ferdium \
-    com.spotify.Client \
-    com.plexamp.Plexamp \
-    org.videolan.VLC \
-    tv.plex.PlexHTPC \
-    com.github.iwalton3.jellyfin-media-player \
-    md.obsidian.Obsidian \
-    com.github.johnfactotum.Foliate \
-    org.gnome.Loupe \
-    org.gnome.Evince \
-    org.gnome.clocks \
-    com.github.wwmm.easyeffects \
-    org.kde.kdeconnect \
-    com.bitwarden.desktop \
-    org.localsend.localsend_app \
-    io.missioncenter.MissionCenter \
-    com.github.tchx84.Flatseal \
-    it.mijorus.gearlever \
-    io.homeassistant.companion.linux \
-    org.blender.Blender \
-    org.kde.krita \
-    com.ultimaker.cura \
-    com.usebottles.bottles \
-    com.jan.Jan \
-    com.github.mtkennerly.ludusavi \
-    org.mozilla.Thunderbird \
-    net.heroicgameslauncher.hgl \
-    net.lutris.Lutris \
+# Install each app individually so a missing ID doesn't abort the whole list
+APPS=(
+    org.mozilla.firefox
+    com.github.Eloston.UngoogledChromium
+    app.zen_browser.zen
+    com.discordapp.Discord
+    dev.vencord.Vesktop
+    org.ferdium.Ferdium
+    com.spotify.Client
+    com.plexamp.Plexamp
+    org.videolan.VLC
+    tv.plex.PlexHTPC
+    com.github.iwalton3.jellyfin-media-player
+    md.obsidian.Obsidian
+    com.github.johnfactotum.Foliate
+    org.gnome.Loupe
+    org.gnome.Evince
+    org.gnome.clocks
+    com.github.wwmm.easyeffects
+    org.kde.kdeconnect
+    com.bitwarden.desktop
+    org.localsend.localsend_app
+    io.missioncenter.MissionCenter
+    com.github.tchx84.Flatseal
+    it.mijorus.gearlever
+    io.homeassistant.companion.linux
+    org.blender.Blender
+    org.kde.krita
+    com.ultimaker.cura
+    com.usebottles.bottles
+    com.jan.Jan
+    com.github.mtkennerly.ludusavi
+    org.mozilla.Thunderbird
+    net.heroicgameslauncher.hgl
+    net.lutris.Lutris
     net.davidotek.pupgui2
+)
+
+for app in "${APPS[@]}"; do
+    flatpak install -y --user flathub "$app" 2>/dev/null || \
+        echo "Warning: could not install $app"
+done

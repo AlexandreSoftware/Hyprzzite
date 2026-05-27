@@ -253,7 +253,7 @@ class Handler(BaseHTTPRequestHandler):
             browser = params.get("browser", ["firefox"])[0]
             mapping = {
                 "firefox":  "org.mozilla.firefox.desktop",
-                "zen":      "io.github.zen_browser.zen.desktop",
+                "zen":      "app.zen_browser.zen.desktop",
                 "chromium": "com.github.Eloston.UngoogledChromium.desktop",
             }
             if browser in mapping:

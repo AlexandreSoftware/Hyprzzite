@@ -9,6 +9,7 @@ dnf5 -y copr enable solopasha/hyprland
 ### ── Hyprland ecosystem ───────────────────────────────────────────────────────
 dnf5 install -y --skip-unavailable \
     hyprland \
+    hyprland-qtutils \
     hyprpaper \
     hyprlock \
     hypridle \
