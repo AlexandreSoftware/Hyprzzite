@@ -20,12 +20,12 @@ install -Dm644 /ctx/config/hypr/hyprland-deck.conf \
 install -Dm644 /ctx/config/waybar/config-deck.jsonc \
     /etc/skel/.config/waybar/config-deck.jsonc
 
-### ── SDDM: autologin to Hyprland ─────────────────────────────────────────────
+### ── SDDM: autologin to Gamescope (Steam Deck Game Mode) ────────────────────
 mkdir -p /etc/sddm.conf.d
 cat > /etc/sddm.conf.d/zz-steamos-autologin.conf << 'EOF'
 [Autologin]
 User=user
-Session=hyprland.desktop
+Session=gamescope-session.desktop
 EOF
 install -Dm644 /ctx/config/systemd/system/sddm-autologin-setup.service \
     /usr/lib/systemd/system/sddm-autologin-setup.service
