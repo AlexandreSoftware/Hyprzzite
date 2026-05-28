@@ -20,5 +20,12 @@ install -Dm644 /ctx/config/hypr/hyprland-deck.conf \
 install -Dm644 /ctx/config/waybar/config-deck.jsonc \
     /etc/skel/.config/waybar/config-deck.jsonc
 
+### ── SDDM: autologin to Hyprland ─────────────────────────────────────────────
+mkdir -p /etc/sddm.conf.d
+cat > /etc/sddm.conf.d/zz-steamos-autologin.conf << 'EOF'
+[Autologin]
+Session=hyprland.desktop
+EOF
+
 ### ── Deck-specific SDDM: no session cleanup (keep Steam Deck Game Mode) ─────
 # Do NOT remove gamescope-session.desktop on Deck — it's the primary session
