@@ -9,6 +9,40 @@ LITELLM_CFG="$HOME/.config/litellm/config.yaml"
 mkdir -p "$HOME/.config/ai"
 touch "$KEYS_FILE"
 
+# ── Step 0: Sync configs from /etc/skel ───────────────────────────────────────
+# Force-update managed config files; skip files the user may have customised
+SKEL="$HOME/.config"
+MANAGED_FILES=(
+    hypr/hyprland.conf
+    hypr/autostart.conf
+    hypr/keybindings.conf
+    hypr/hypridle.conf
+    hypr/hyprlock.conf
+    hypr/hyprpaper.conf
+    hypr/hyprland-deck.conf
+    hypr/workspaces.conf
+    waybar/config.jsonc
+    waybar/style.css
+    dunst/dunstrc
+    wlogout/layout
+    wlogout/style.css
+    kitty/kitty.conf
+    wofi/config
+    wofi/style.css
+)
+
+for f in "${MANAGED_FILES[@]}"; do
+    src="/etc/skel/.config/$f"
+    dst="$SKEL/$f"
+    [ -f "$src" ] || continue
+    mkdir -p "$(dirname "$dst")"
+    cp -f "$src" "$dst"
+done
+
+# Sync scripts directory (always update)
+mkdir -p "$HOME/.config/waybar/scripts"
+cp -f /etc/skel/.config/waybar/scripts/*.sh "$HOME/.config/waybar/scripts/" 2>/dev/null || true
+
 # ── Step 1: Display configuration ─────────────────────────────────────────────
 DISPLAY_CHOICE=$(zenity --list \
     --title="$TITLE" \
