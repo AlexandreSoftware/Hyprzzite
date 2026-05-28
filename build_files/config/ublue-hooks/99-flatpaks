@@ -41,6 +41,7 @@ APPS=(
     net.heroicgameslauncher.hgl
     net.lutris.Lutris
     net.davidotek.pupgui2
+    in.srev.guiscrcpy
 )
 
 for app in "${APPS[@]}"; do

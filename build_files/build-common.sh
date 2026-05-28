@@ -92,7 +92,12 @@ dnf5 install -y --skip-unavailable \
     distrobox
 
 ### ── lazygit ──────────────────────────────────────────────────────────────────
-dnf5 install -y --skip-unavailable lazygit
+LAZYGIT_VER=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest \
+    | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')
+curl -Lo /tmp/lazygit.tar.gz \
+    "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VER}/lazygit_${LAZYGIT_VER}_Linux_x86_64.tar.gz"
+tar -xzf /tmp/lazygit.tar.gz -C /tmp lazygit
+install -Dm755 /tmp/lazygit /usr/bin/lazygit
 
 ### ── mise (polyglot version manager) ────────────────────────────────────────
 curl https://mise.run | MISE_INSTALL_PATH=/usr/bin/mise sh
@@ -112,7 +117,7 @@ dnf5 install -y --skip-unavailable \
     || true
 
 ### ── EmuDeck dependencies ────────────────────────────────────────────────────
-dnf5 install -y --skip-unavailable rsync unzip p7zip p7zip-plugins scrcpy
+dnf5 install -y --skip-unavailable rsync unzip p7zip p7zip-plugins
 
 ### ── Gaming sysctl tweaks ────────────────────────────────────────────────────
 install -Dm644 /ctx/config/sysctl/gaming.conf /etc/sysctl.d/99-gaming.conf
