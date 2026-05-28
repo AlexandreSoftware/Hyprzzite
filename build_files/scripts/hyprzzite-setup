@@ -143,13 +143,16 @@ if flatpak list --app 2>/dev/null | grep -q "org.mozilla.firefox" || command -v 
     $FIREFOX_CMD --headless --createProfile "gaming" 2>/dev/null || true
 fi
 
-# ── Step 5: Steam shortcuts ────────────────────────────────────────────────────
-if command -v steam &>/dev/null; then
+# ── Step 5: Steam configuration ───────────────────────────────────────────────
+if command -v steam &>/dev/null || command -v setup-steam-config &>/dev/null; then
     zenity --question \
         --title="$TITLE" \
-        --text="Add media apps (Jellyfin, Spotify, YouTube TV…) as Steam shortcuts?\n(Requires Steam to have been launched once)" \
-        --ok-label="Yes" --cancel-label="Skip" \
-        2>/dev/null && setup-steam-shortcuts || true
+        --text="Configure Steam?\n\n• Enable Proton for all games\n• Set gamescope as default launch option (correct refresh rate)\n• Add media apps (Jellyfin, Spotify, YouTube TV…) as shortcuts\n\nRequires Steam to have been launched at least once." \
+        --ok-label="Configure Steam" --cancel-label="Skip" \
+        2>/dev/null && {
+            setup-steam-config || true
+            setup-steam-shortcuts || true
+        }
 fi
 
 # ── Done ───────────────────────────────────────────────────────────────────────

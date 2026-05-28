@@ -28,6 +28,7 @@ install -Dm755 /ctx/scripts/install-decky-plugins      /usr/bin/install-decky-pl
 install -Dm755 /ctx/scripts/setup-steam-shortcuts      /usr/bin/setup-steam-shortcuts
 install -Dm755 /ctx/scripts/launch-steam-p1            /usr/bin/launch-steam-p1
 install -Dm755 /ctx/scripts/launch-steam-p2            /usr/bin/launch-steam-p2
+install -Dm755 /ctx/scripts/setup-steam-config         /usr/bin/setup-steam-config
 
 ### ── Gamescope HTPC session file ─────────────────────────────────────────────
 install -Dm644 /ctx/config/sessions/gamescope-htpc.desktop \
