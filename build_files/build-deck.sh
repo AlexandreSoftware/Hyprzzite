@@ -24,8 +24,12 @@ install -Dm644 /ctx/config/waybar/config-deck.jsonc \
 mkdir -p /etc/sddm.conf.d
 cat > /etc/sddm.conf.d/zz-steamos-autologin.conf << 'EOF'
 [Autologin]
+User=user
 Session=hyprland.desktop
 EOF
+install -Dm644 /ctx/config/systemd/system/sddm-autologin-setup.service \
+    /usr/lib/systemd/system/sddm-autologin-setup.service
+systemctl enable sddm-autologin-setup.service
 
 ### ── Deck-specific SDDM: no session cleanup (keep Steam Deck Game Mode) ─────
 # Do NOT remove gamescope-session.desktop on Deck — it's the primary session

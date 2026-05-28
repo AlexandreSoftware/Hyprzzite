@@ -66,8 +66,13 @@ install -Dm644 /ctx/config/kde/autostart/arrpc.desktop \
 mkdir -p /etc/sddm.conf.d
 cat > /etc/sddm.conf.d/zz-steamos-autologin.conf << 'EOF'
 [Autologin]
+User=user
 Session=hyprland.desktop
 EOF
+# sddm-autologin-setup.service rewrites User= to the actual first human user at boot
+install -Dm644 /ctx/config/systemd/system/sddm-autologin-setup.service \
+    /usr/lib/systemd/system/sddm-autologin-setup.service
+systemctl enable sddm-autologin-setup.service
 
 ### ── Clean up SDDM session list ─────────────────────────────────────────────
 # Remove Bazzite sessions we're not using (keep Plasma, Hyprland, Gamescope HTPC)
