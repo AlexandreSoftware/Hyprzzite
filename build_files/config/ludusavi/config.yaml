@@ -1,0 +1,11 @@
+---
+manifest:
+  url: "https://raw.githubusercontent.com/mtkennerly/ludusavi-manifest/master/data/manifest.yaml"
+  etag: ~
+backup:
+  path: "~/GameSaves"
+restore:
+  path: "~/GameSaves"
+apps:
+  ludusavi:
+    exclude: []

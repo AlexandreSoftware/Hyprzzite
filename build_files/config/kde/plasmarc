@@ -1,0 +1,5 @@
+[Theme]
+name=breeze-dark
+
+[KDE]
+LookAndFeelPackage=org.kde.breezedark.desktop

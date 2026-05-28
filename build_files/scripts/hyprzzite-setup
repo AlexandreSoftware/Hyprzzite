@@ -133,6 +133,16 @@ case "$BROWSER" in
     "Ungoogled Chromium")  xdg-settings set default-web-browser com.github.Eloston.UngoogledChromium.desktop ;;
 esac
 
+# Create a separate Firefox "gaming" profile for KDE session (separate cookies/sessions)
+# Keeps Twitch/YouTube gaming sessions isolated from dev browsing
+if flatpak list --app 2>/dev/null | grep -q "org.mozilla.firefox" || command -v firefox &>/dev/null; then
+    FIREFOX_CMD="firefox"
+    flatpak list --app 2>/dev/null | grep -q "org.mozilla.firefox" && \
+        FIREFOX_CMD="flatpak run org.mozilla.firefox"
+    # Create profile without launching (--headless needed in Hyprland to avoid UI)
+    $FIREFOX_CMD --headless --createProfile "gaming" 2>/dev/null || true
+fi
+
 # ── Step 5: Steam shortcuts ────────────────────────────────────────────────────
 if command -v steam &>/dev/null; then
     zenity --question \

@@ -182,11 +182,22 @@ install -Dm755 /ctx/config/ublue-hooks/98-ai-setup \
 install -Dm755 /ctx/config/ublue-hooks/99-flatpaks \
     /usr/share/ublue-os/user-setup.hooks.d/99-flatpaks
 
+### ── WirePlumber audio routing config ───────────────────────────────────────
+mkdir -p /etc/skel/.config/wireplumber
+cp -r /ctx/config/wireplumber /etc/skel/.config/
+
+### ── Ludusavi save-game backup default config ───────────────────────────────
+mkdir -p /etc/skel/.config/ludusavi
+install -Dm644 /ctx/config/ludusavi/config.yaml \
+    /etc/skel/.config/ludusavi/config.yaml
+
 ### ── Enable system units ─────────────────────────────────────────────────────
 systemctl enable bluetooth.service
 systemctl enable podman.socket
 systemctl enable ollama
 systemctl enable tailscaled
+# inputplumber: maps gamepad to keyboard/mouse at system level (SDDM controller nav)
+systemctl enable inputplumber.service 2>/dev/null || true
 # ProtonVPN: systemctl enable fails without running systemd; create symlink directly
 mkdir -p /etc/systemd/system/multi-user.target.wants
 ln -sf /usr/lib/systemd/system/me.proton.vpn.service \
